@@ -54,7 +54,6 @@ const MPRIVCalculator: React.FC = () => {
   // Estado para simulación Monte Carlo
   type SimulationStats = { min: number; avg: number; median: number; max: number };
   const [simStats, setSimStats] = useState<SimulationStats | null>(null);
-  const [simSeries, setSimSeries] = useState<number[]>([]);
   const [histSeries, setHistSeries] = useState<{ labels: string[]; counts: number[] } | null>(null);
   const [simRunning, setSimRunning] = useState(false);
 
@@ -221,7 +220,6 @@ const MPRIVCalculator: React.FC = () => {
     const medianFine = sortedFines[Math.floor(sortedFines.length / 2)];
 
     setSimStats({ min: minFine, avg: avgFine, median: medianFine, max: maxFine });
-    setSimSeries(fines);
 
     // Construir histograma (20 bins) - exacto del PHP
     const bins = 20;
@@ -236,7 +234,8 @@ const MPRIVCalculator: React.FC = () => {
     const labels = Array.from({ length: bins }, (_, i) => {
       const binStart = minFine + i * binSize;
       const binEnd = binStart + binSize;
-      return `${Math.round(binStart / 1000)}K - ${Math.round(binEnd / 1000)}K`;
+      // Mejorar formato: mostrar como $85K - $95K en lugar de 85K - 95K
+      return `$${Math.round(binStart / 1000)}K - $${Math.round(binEnd / 1000)}K`;
     });
 
     setHistSeries({ labels, counts: histogram });
@@ -263,25 +262,11 @@ const MPRIVCalculator: React.FC = () => {
     setDownloading(true);
     const { histUrl } = getChartDataUrls();
     
-    // Generar recomendaciones según severidad
-    const recommendations = results.severity === 'grave' ? [
-      '<strong>Mitigar:</strong> Se recomienda implementar medidas correctivas inmediatas para abordar la causa raíz de la infracción.',
-      '<strong>Fortalecer Gobernanza:</strong> Considerar la designación de un Delegado de Protección de Datos (DPD) para supervisar el cumplimiento.',
-      '<strong>Evaluar:</strong> Realizar una auditoría completa y una Evaluación de Impacto (DPIA) para los tratamientos de alto riesgo.',
-      '<strong>Preparar:</strong> Establecer y probar procedimientos de respuesta a incidentes y notificación de vulneraciones.'
-    ] : [
-      '<strong>Mejorar:</strong> Implementar mejores prácticas y controles de seguridad para reducir la probabilidad y/o el impacto del riesgo.',
-      '<strong>Capacitar:</strong> Formar a todo el personal involucrado en el tratamiento de datos sobre la normativa LOPDP y las políticas internas.',
-      '<strong>Revisar:</strong> Actualizar periódicamente las políticas de privacidad y los mecanismos de consentimiento para asegurar su claridad y cumplimiento.',
-      '<strong>Monitorear:</strong> Establecer controles y auditorías regulares para verificar el cumplimiento continuo.'
-    ];
-
     const payload = {
       company: 'Almacenes Tía',
       multa: results.multaFinal,
       severity: results.severity,
       histChartDataUrl: histUrl || null,
-      recommendations: recommendations,
       monteCarloStats: simStats || null,
       timestamp: Date.now()
     };
@@ -558,8 +543,6 @@ const MPRIVCalculator: React.FC = () => {
                   </div>
                 </div>
 
-                {/* (Eliminado duplicado de TEV) */}
-
                 <div className="mb-4">
                   <label htmlFor="intencionalidad" className="form-label fw-bold">
                     Intencionalidad - INT *
@@ -636,61 +619,145 @@ const MPRIVCalculator: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="row">
-                    <div className="col-12">
-                      <h5 className="mb-3">Desglose del Cálculo</h5>
-                      <div className="formula-step">
-                        <strong>PDI (Porcentaje de Datos Impactados):</strong> {results.PDI}%
-                      </div>
-                      <div className="formula-step">
-                        <strong>CDI (Cuantía de Datos Impactados):</strong> {formatCurrency(results.CDI)}
-                      </div>
-                      <div className="formula-step">
-                        <strong>IED (Impacto en Derechos):</strong> {results.IED}
-                      </div>
-                      <div className="formula-step">
-                        <strong>INT (Intencionalidad):</strong> {results.INT}
-                      </div>
-                      <div className="formula-step">
-                        <strong>RER (Reiteración/Reincidencia):</strong> {results.RER}
-                      </div>
-                      <div className="formula-step">
-                        <strong>SDI (Severidad del Impacto):</strong> {results.SDI.toFixed(4)}
-                      </div>
-                      <div className="formula-step bg-primary text-white">
-                        <strong>Multa Final = CDI × SDI = {formatCurrency(results.multaFinal)}</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Sección de Recomendaciones */}
+                  {/* Simulación Monte Carlo integrada en Resultados */}
                   <div className="row mt-4">
                     <div className="col-12">
-                      <div className="alert alert-primary">
-                        <h6 className="fw-bold text-primary">
-                          <i className="bi bi-exclamation-triangle me-2"></i>
-                          Recomendaciones de Tratamiento del Riesgo
-                        </h6>
-                        {results.severity === 'grave' ? (
-                          <ul className="mb-3">
-                            <li><strong>Mitigar:</strong> Se recomienda implementar medidas correctivas inmediatas para abordar la causa raíz de la infracción.</li>
-                            <li><strong>Fortalecer Gobernanza:</strong> Considerar la designación de un Delegado de Protección de Datos (DPD) para supervisar el cumplimiento.</li>
-                            <li><strong>Evaluar:</strong> Realizar una auditoría completa y una Evaluación de Impacto (DPIA) para los tratamientos de alto riesgo.</li>
-                            <li><strong>Preparar:</strong> Establecer y probar procedimientos de respuesta a incidentes y notificación de vulneraciones.</li>
-                          </ul>
-                        ) : (
-                          <ul className="mb-3">
-                            <li><strong>Mejorar:</strong> Implementar mejores prácticas y controles de seguridad para reducir la probabilidad y/o el impacto del riesgo.</li>
-                            <li><strong>Capacitar:</strong> Formar a todo el personal involucrado en el tratamiento de datos sobre la normativa LOPDP y las políticas internas.</li>
-                            <li><strong>Revisar:</strong> Actualizar periódicamente las políticas de privacidad y los mecanismos de consentimiento para asegurar su claridad y cumplimiento.</li>
-                            <li><strong>Monitorear:</strong> Establecer controles y auditorías regulares para verificar el cumplimiento continuo.</li>
-                          </ul>
-                        )}
-                        <div className="mt-3 pt-2 border-top border-light">
-                          <small className="text-muted">
-                            <i className="bi bi-info-circle me-1"></i>
-                            <strong>Nota:</strong> Para descargar el reporte PDF completo, primero ejecute la simulación Monte Carlo desplazándose hacia abajo.
-                          </small>
+                      <div className="card">
+                        <div className="card-header bg-info text-white">
+                          <h5 className="card-title mb-0">
+                            <i className="bi bi-bar-chart-line me-2"></i>
+                            Simulación Monte Carlo
+                          </h5>
+                        </div>
+                        <div className="card-body">
+                          <p className="mb-4">La simulación Monte Carlo genera múltiples escenarios considerando la variabilidad en los factores de cálculo para proyectar un rango de posibles multas.</p>
+                          
+                          {simStats && (
+                            <div className="row mb-4">
+                              <div className="col-md-3 text-center">
+                                <div className="card border-success h-100">
+                                  <div className="card-body">
+                                    <div className="fw-bold text-success">Optimista</div>
+                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2' }}>{formatCurrency(simStats.min)}</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="col-md-3 text-center">
+                                <div className="card border-primary h-100">
+                                  <div className="card-body">
+                                    <div className="fw-bold text-primary">Promedio</div>
+                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2' }}>{formatCurrency(simStats.avg)}</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="col-md-3 text-center">
+                                <div className="card border-info h-100">
+                                  <div className="card-body">
+                                    <div className="fw-bold text-info">Mediana</div>
+                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2' }}>{formatCurrency(simStats.median)}</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="col-md-3 text-center">
+                                <div className="card border-danger h-100">
+                                  <div className="card-body">
+                                    <div className="fw-bold text-danger">Pesimista</div>
+                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2' }}>{formatCurrency(simStats.max)}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            className="btn btn-primary mb-4"
+                            onClick={() => runMonteCarloSimulation(1000)}
+                            disabled={simRunning}
+                          >
+                            {simRunning ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-2" /> Ejecutando simulación…
+                              </>
+                            ) : (
+                              <>
+                                <i className="bi bi-play-circle me-2"></i>
+                                Ejecutar Simulación Monte Carlo (1,000 iteraciones)
+                              </>
+                            )}
+                          </button>
+
+                          {histSeries && (
+                            <div className="chart-container mt-4">
+                              <div style={{ height: '400px', margin: '20px 0' }}>
+                                <Bar
+                                  ref={histChartRef}
+                                  data={{
+                                    labels: histSeries.labels,
+                                    datasets: [
+                                      {
+                                        label: 'Frecuencia',
+                                        data: histSeries.counts,
+                                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                                        borderColor: 'rgba(75, 192, 192, 1)',
+                                        borderWidth: 1
+                                      }
+                                    ]
+                                  }}
+                                  options={{
+                                    responsive: true,
+                                    plugins: {
+                                      legend: { display: false },
+                                      title: { 
+                                        display: true, 
+                                        text: 'Distribución de Frecuencias - Simulación Monte Carlo (1,000 iteraciones)',
+                                        font: { size: 14, weight: 'bold' }
+                                      }
+                                    },
+                                    scales: { 
+                                      x: { 
+                                        title: { display: true, text: 'Rango de Multa (USD)' },
+                                        ticks: {
+                                          maxRotation: 45,
+                                          minRotation: 45,
+                                          font: { size: 10 }
+                                        }
+                                      }, 
+                                      y: { 
+                                        title: { display: true, text: 'Número de Casos' }, 
+                                        beginAtZero: true,
+                                        ticks: {
+                                          stepSize: 1,
+                                          font: { size: 11 }
+                                        }
+                                      }
+                                    },
+                                    maintainAspectRatio: false
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="mt-4">
+                            <button
+                              type="button"
+                              className="btn btn-danger"
+                              onClick={handleDownloadPDF}
+                              disabled={!results || downloading || !histSeries}
+                            >
+                              {downloading ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" /> Generando...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="bi bi-file-earmark-pdf me-2"></i>
+                                  Descargar Reporte PDF
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -701,131 +768,6 @@ const MPRIVCalculator: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Sección de gráficos Monte Carlo */}
-      {results && (
-        <div className="row mt-5">
-          <div className="col-12">
-            <div className="card">
-              <div className="card-header bg-primary text-white">
-                <h4 className="card-title mb-0">
-                  <i className="bi bi-bar-chart-line me-2"></i>
-                  Simulación Monte Carlo
-                </h4>
-              </div>
-              <div className="card-body">
-                <p className="mb-4">La simulación Monte Carlo genera múltiples escenarios considerando la variabilidad en los factores de cálculo para proyectar un rango de posibles multas.</p>
-                
-                {simStats && (
-                  <div className="row mb-4">
-                    <div className="col-md-3 text-center">
-                      <div className="card border-success h-100">
-                        <div className="card-body">
-                          <div className="fw-bold text-success">Optimista</div>
-                          <div className="h5 mb-0">{formatCurrency(simStats.min)}</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-3 text-center">
-                      <div className="card border-primary h-100">
-                        <div className="card-body">
-                          <div className="fw-bold text-primary">Promedio</div>
-                          <div className="h5 mb-0">{formatCurrency(simStats.avg)}</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-3 text-center">
-                      <div className="card border-info h-100">
-                        <div className="card-body">
-                          <div className="fw-bold text-info">Mediana</div>
-                          <div className="h5 mb-0">{formatCurrency(simStats.median)}</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-3 text-center">
-                      <div className="card border-danger h-100">
-                        <div className="card-body">
-                          <div className="fw-bold text-danger">Pesimista</div>
-                          <div className="h5 mb-0">{formatCurrency(simStats.max)}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  className="btn btn-primary mb-4"
-                  onClick={() => runMonteCarloSimulation(1000)}
-                  disabled={simRunning}
-                >
-                  {simRunning ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" /> Ejecutando simulación…
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-play-circle me-2"></i>
-                      Ejecutar Simulación Monte Carlo (1,000 iteraciones)
-                    </>
-                  )}
-                </button>
-
-                {histSeries && (
-                  <div className="chart-container mt-4">{/* Histograma movido arriba */}
-                    <div style={{ height: '400px', margin: '20px 0' }}>
-                      <Bar
-                        ref={histChartRef}
-                        data={{
-                          labels: histSeries.labels,
-                          datasets: [
-                            {
-                              label: 'Frecuencia',
-                              data: histSeries.counts,
-                              backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                              borderColor: 'rgba(75, 192, 192, 1)',
-                              borderWidth: 1
-                            }
-                          ]
-                        }}
-                        options={{
-                          responsive: true,
-                          plugins: {
-                            legend: { display: false },
-                            title: { display: true, text: 'Distribución de Frecuencias - Simulación Monte Carlo (1,000 iteraciones)' }
-                          },
-                          scales: { x: { title: { display: true, text: 'Rango de Multa' } }, y: { title: { display: true, text: 'Frecuencia' }, beginAtZero: true } },
-                          maintainAspectRatio: false
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={handleDownloadPDF}
-                    disabled={!results || downloading || !histSeries}
-                  >
-                    {downloading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" /> Generando...
-                      </>
-                    ) : (
-                      <>
-                        <i className="bi bi-file-earmark-pdf me-2"></i>
-                        Descargar Reporte PDF
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

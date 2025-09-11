@@ -1,4 +1,4 @@
-export const VDN = 17000000;
+export const VDN = 170000000;
 
 // Tipos para mejor tipado
 export interface Activity {

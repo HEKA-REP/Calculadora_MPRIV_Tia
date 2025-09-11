@@ -189,3 +189,4 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+*.php

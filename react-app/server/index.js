@@ -14,15 +14,10 @@ app.use(bodyParser.json({ limit: '5mb' }));
 app.post('/api/report/pdf', async (req, res) => {
   const startedAt = Date.now();
   try {
-    const { company = 'Almacenes Tía', multa, severity, histChartDataUrl, timestamp, recommendations, monteCarloStats } = req.body || {};
+    const { company = 'Almacenes Tía', multa, severity, histChartDataUrl, timestamp, monteCarloStats } = req.body || {};
     if (typeof multa !== 'number' || !severity) {
       return res.status(400).json({ error: 'Datos insuficientes para generar el reporte.' });
     }
-
-    // Generar lista de recomendaciones
-    const recommendationsList = recommendations && recommendations.length > 0 
-      ? recommendations.map(rec => `<li>${rec}</li>`).join('')
-      : '';
 
     // Generar cuadros de estadísticas Monte Carlo
     const formatCurrency = (amount) => `$${Math.round(amount).toLocaleString('es-EC')}`;
@@ -96,15 +91,6 @@ app.post('/api/report/pdf', async (req, res) => {
     <div>Multa aproximada</div>
     <div class="amount">$${Math.round(multa).toLocaleString('es-EC')}</div>
   </div>
-
-  ${recommendationsList ? `
-  <div class="recommendations">
-    <h3> Recomendaciones de Tratamiento del Riesgo</h3>
-    <ul>
-      ${recommendationsList}
-    </ul>
-  </div>
-  ` : ''}
 
   ${monteCarloStatsHtml ? `
   <div class="card">
