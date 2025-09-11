@@ -1,0 +1,116 @@
+body {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 100vh;
+}
+
+.navbar {
+  padding: 15px 0;
+}
+
+.card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+.gradient-header {
+  background: linear-gradient(135deg, #007bff, #6610f2);
+  color: white;
+}
+
+.result-card {
+  transition: transform 0.2s;
+}
+
+.result-card:hover {
+  transform: translateY(-2px);
+}
+
+.formula-step {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
+  background-color: #f8f9fa;
+  border-left: 4px solid #007bff;
+  padding: 10px;
+  margin: 5px 0;
+}
+
+/* Títulos dentro del desglose: semi bold */
+.formula-step strong {
+  font-weight: 600;
+}
+
+.chart-container {
+  position: relative;
+  height: 400px;
+  margin: 20px 0;
+}
+
+/* Estilos adicionales para gráficos Monte Carlo */
+.chart-container canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.site-footer {
+  background-color: #222222;
+  padding: 20px 0;
+  border-top: 1px solid #2c2c2c;
+}
+
+.site-footer .footer-col {
+  display: flex;
+  align-items: center;
+}
+
+.site-footer .footer-col img {
+  height: auto;
+  max-height: 80px;
+}
+
+.site-footer .footer-col p {
+  color: #ffffff;
+  font-size: 16px;
+  margin: 0;
+}
+
+.site-footer .footer-col a {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.site-footer .footer-col a:hover {
+  text-decoration: underline;
+}
+
+.footer-dark {
+  background-color: #222222; /* as requested */
+  padding: 10px 0; /* a bit taller/wider feel */
+  border-top: 1px solid #2c2c2c;
+}
+
+.footer-text {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.footer-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+}
+.footer-link:hover { text-decoration: underline; }
+
+.footer-row {
+  align-items: center;
+}
+
+.footer-col {
+  display: flex;
+  align-items: center;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
