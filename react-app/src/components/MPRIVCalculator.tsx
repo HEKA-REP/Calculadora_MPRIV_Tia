@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef } from 'react';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
 import { 
   activities, 
   areas, 
@@ -93,7 +93,7 @@ const MPRIVCalculator: React.FC = () => {
 
   // Total de titulares de la empresa (dato fijo "quemado")
   // TODO: Ajustar este valor al total real de la empresa.
-  const TOTAL_TITULARES_EMPRESA = 10000;
+  const TOTAL_TITULARES_EMPRESA = 170000000;
 
   const formatCurrency = (amount: number): string => {
     return '$' + Math.round(amount).toLocaleString('es-EC');
@@ -243,13 +243,11 @@ const MPRIVCalculator: React.FC = () => {
     setSimRunning(false);
   };
 
-  const lineChartRef = useRef<any>(null);
   const histChartRef = useRef<any>(null);
 
   const getChartDataUrls = () => {
-    const lineUrl = lineChartRef.current?.toBase64Image?.() || lineChartRef.current?.canvas?.toDataURL?.();
     const histUrl = histChartRef.current?.toBase64Image?.() || histChartRef.current?.canvas?.toDataURL?.();
-    return { lineUrl, histUrl };
+    return { histUrl };
   };
 
   const [downloading, setDownloading] = useState(false);
@@ -263,7 +261,7 @@ const MPRIVCalculator: React.FC = () => {
   const handleDownloadPDF = async () => {
     if (!results) return;
     setDownloading(true);
-    const { lineUrl, histUrl } = getChartDataUrls();
+    const { histUrl } = getChartDataUrls();
     
     // Generar recomendaciones según severidad
     const recommendations = results.severity === 'grave' ? [
@@ -282,7 +280,6 @@ const MPRIVCalculator: React.FC = () => {
       company: 'Almacenes Tía',
       multa: results.multaFinal,
       severity: results.severity,
-      lineChartDataUrl: lineUrl || null,
       histChartDataUrl: histUrl || null,
       recommendations: recommendations,
       monteCarloStats: simStats || null,
@@ -320,7 +317,7 @@ const MPRIVCalculator: React.FC = () => {
   // Preparar datasets para gráficos
   useMemo(() => {
     // just to ensure ChartJS is registered once
-  ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
+  ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -774,48 +771,8 @@ const MPRIVCalculator: React.FC = () => {
                   )}
                 </button>
 
-                {simSeries.length > 0 && (
-                  <div className="chart-container">
-                    <div style={{ height: '400px', margin: '20px 0' }}>
-                      <Line
-                        ref={lineChartRef}
-                        data={{
-                          labels: simSeries.slice(0, 100).map((_, i) => String(i + 1)),
-                          datasets: [
-                            {
-                              label: 'Multa Final',
-                              data: simSeries.slice(0, 100),
-                              borderColor: 'rgb(54, 162, 235)',
-                              backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                              pointRadius: 2,
-                              tension: 0.1,
-                              fill: true
-                            }
-                          ]
-                        }}
-                        options={{
-                          responsive: true,
-                          plugins: {
-                            legend: { display: false },
-                            title: {
-                              display: true,
-                              text: 'Simulación Monte Carlo - Evolución de Multas (primeras 100 iteraciones)'
-                            }
-                          },
-                          scales: {
-                            x: { title: { display: true, text: 'Iteración' }, display: true },
-                            y: { title: { display: true, text: 'Multa (USD)' }, ticks: { callback: (value) => `$${Math.round(Number(value) / 1000)}K` } }
-                          },
-                          interaction: { intersect: false, mode: 'index' },
-                          maintainAspectRatio: false
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
                 {histSeries && (
-                  <div className="chart-container mt-4">
+                  <div className="chart-container mt-4">{/* Histograma movido arriba */}
                     <div style={{ height: '400px', margin: '20px 0' }}>
                       <Bar
                         ref={histChartRef}
@@ -850,7 +807,7 @@ const MPRIVCalculator: React.FC = () => {
                     type="button"
                     className="btn btn-danger"
                     onClick={handleDownloadPDF}
-                    disabled={!results || downloading || simSeries.length === 0}
+                    disabled={!results || downloading || !histSeries}
                   >
                     {downloading ? (
                       <>

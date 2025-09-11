@@ -14,7 +14,7 @@ app.use(bodyParser.json({ limit: '5mb' }));
 app.post('/api/report/pdf', async (req, res) => {
   const startedAt = Date.now();
   try {
-    const { company = 'Almacenes Tía', multa, severity, lineChartDataUrl, histChartDataUrl, timestamp, recommendations, monteCarloStats } = req.body || {};
+    const { company = 'Almacenes Tía', multa, severity, histChartDataUrl, timestamp, recommendations, monteCarloStats } = req.body || {};
     if (typeof multa !== 'number' || !severity) {
       return res.status(400).json({ error: 'Datos insuficientes para generar el reporte.' });
     }
@@ -114,8 +114,7 @@ app.post('/api/report/pdf', async (req, res) => {
   ` : ''}
 
   <div class="grid charts">
-    ${lineChartDataUrl ? `<div class="card chart-container"><h3>Serie Monte Carlo</h3><img src="${lineChartDataUrl}" /></div>` : ''}
-    ${histChartDataUrl ? `<div class="card chart-container"><h3>Histograma</h3><img src="${histChartDataUrl}" /></div>` : ''}
+    ${histChartDataUrl ? `<div class="card chart-container"><h3>Distribución de Frecuencias - Monte Carlo</h3><img src="${histChartDataUrl}" /></div>` : ''}
   </div>
 </body>
 </html>`;
