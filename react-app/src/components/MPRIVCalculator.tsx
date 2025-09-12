@@ -519,296 +519,313 @@ const MPRIVCalculator: React.FC = () => {
   };
 
   return (
-    <div className="container-fluid py-2">
-      <div className="row">
-        <div className="col-lg-6 mb-4">
-          <div className="card h-100">
-            <div className="card-header bg-primary text-white">
-              <h3 className="card-title mb-0">
-                <i className="bi bi-file-text me-2"></i>
-                Configuración del Cálculo
-              </h3>
-            </div>
-            <div className="card-body">
-              <form onSubmit={handleSubmit} id="mprivForm">
-                <div className="mb-4">
-                  <label htmlFor="area" className="form-label fw-bold h5">Área de la Empresa *</label>
-                  <select 
-                    className={`form-select ${!formData.area ? 'text-muted' : ''}`}
-                    id="area" 
-                    value={formData.area}
-                    onChange={(e) => handleAreaChange(e.target.value)}
-                    required
-                  >
-                    {/* Placeholder no seleccionable */}
-                    <option value="" disabled hidden>Seleccione un área</option>
-                    {Object.entries(areas).map(([key, name]) => (
-                      <option key={key} value={key}>{name}</option>
-                    ))}
-                  </select>
+    <div className="container-fluid py-3">
+      {/* Sección superior: Configuración del Cálculo */}
+      <div className="mb-4">
+        <div className="card">
+          <div className="card-header bg-primary text-white">
+            <h3 className="card-title mb-0">
+              <i className="bi bi-sliders me-2"></i>
+              Configuración del Cálculo
+            </h3>
+          </div>
+          <div className="card-body">
+            <form onSubmit={handleSubmit} id="mprivForm">
+              {/* Paso 1: Contexto */}
+              <div className="section mb-4">
+                <div className="section-title d-flex align-items-center mb-3">
+                  <span className="section-number me-2">1</span>
+                  <h5 className="mb-0 fw-bold">Contexto de la actividad</h5>
+                </div>
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <label htmlFor="area" className="form-label fw-semibold">Área de la Empresa *</label>
+                    <select
+                      className={`form-select ${!formData.area ? 'text-muted' : ''}`}
+                      id="area"
+                      value={formData.area}
+                      onChange={(e) => handleAreaChange(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled hidden>Seleccione un área</option>
+                      {Object.entries(areas).map(([key, name]) => (
+                        <option key={key} value={key}>{name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label htmlFor="activity" className="form-label fw-semibold">Actividad de Tratamiento *</label>
+                    <select
+                      className={`form-select ${!formData.activity ? 'text-muted' : ''}`}
+                      id="activity"
+                      value={formData.activity}
+                      onChange={(e) => handleActivityChange(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled hidden>Seleccione una actividad</option>
+                      {formData.area && activities[formData.area] &&
+                        Object.entries(activities[formData.area]).map(([key, activity]) => (
+                          <option key={key} value={key}>{activity.name}</option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+                {showActivityDescription && formData.area && formData.activity && (
+                  <div className="mt-3">
+                    <div className={`alert ${(activities[formData.area]?.[formData.activity] as Activity)?.severity === 'grave' ? 'alert-danger border-danger' : 'alert-warning border-warning'} border-start border-5`}>                      
+                      <div className="d-flex align-items-center justify-content-start gap-2 mb-2">
+                        <span className={`badge ${(activities[formData.area]?.[formData.activity] as Activity)?.severity === 'grave' ? 'bg-danger' : 'bg-warning text-dark'} fw-bold`}>
+                          INFRACCIÓN {(activities[formData.area]?.[formData.activity] as Activity)?.severity.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="small">
+                        <strong>Descripción:</strong> {activityDescription}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Paso 2: IED */}
+              <div className="section mb-4">
+                <div className="section-title d-flex align-items-center mb-3">
+                  <span className="section-number me-2">2</span>
+                  <h5 className="mb-0 fw-bold">Impacto en los Derechos (IED) *</h5>
                 </div>
 
-                <div className="mb-4">
-                  <label htmlFor="activity" className="form-label fw-bold h5">Actividad de Tratamiento *</label>
-                  <select 
-                    className={`form-select ${!formData.activity ? 'text-muted' : ''}`} 
-                    id="activity" 
-                    value={formData.activity}
-                    onChange={(e) => handleActivityChange(e.target.value)}
-                    required
-                  >
-                    <option value="" disabled hidden>Seleccione una actividad</option>
-                    {formData.area && activities[formData.area] && 
-                      Object.entries(activities[formData.area]).map(([key, activity]) => (
-                        <option key={key} value={key}>
-                          {activity.name}
-                        </option>
-                      ))
-                    }
-                  </select>
-                  {showActivityDescription && formData.area && formData.activity && (
-                    <div className="mt-2">
-                      <div className={`alert ${(activities[formData.area]?.[formData.activity] as Activity)?.severity === 'grave' ? 'alert-danger border-danger' : 'alert-warning border-warning'} border-start border-5`}>
-                        <div className="d-flex align-items-center justify-content-start gap-2 mb-2">
-                          <span className={`badge ${(activities[formData.area]?.[formData.activity] as Activity)?.severity === 'grave' ? 'bg-danger' : 'bg-warning text-dark'} fw-bold`}>
-                            INFRACCIÓN {(activities[formData.area]?.[formData.activity] as Activity)?.severity.toUpperCase()}
-                          </span>
+                {/* 2.1 TDP */}
+                <div className="subsection mb-4">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="subsection-bullet me-2">2.1</span>
+                    <label className="form-label fw-semibold mb-0">Tipos de datos personales tratados (TDP)</label>
+                  </div>
+                  <div className="form-text mb-2">Seleccione los tipos de datos personales que se procesan en esta actividad:</div>
+                  <div className="row g-3">
+                    {tiposDatosPersonales.map(tipo => {
+                      const checked = (formData.tiposDatosSeleccionados || []).includes(tipo.id);
+                      const sensibilidadColor = tipo.sensibilidad === 'muy_alta' ? 'danger' :
+                                               tipo.sensibilidad === 'alta' ? 'warning' :
+                                               tipo.sensibilidad === 'media' ? 'info' : 'secondary';
+                      const tileClass = `tdp-tile border rounded p-2 h-100 d-flex align-items-center ${checked ? 'tdp-tile-selected' : ''}`;
+                      return (
+                        <div className="col-sm-6 col-lg-4" key={tipo.id}>
+                          <label className={tileClass} htmlFor={`tdp_${tipo.id}`}> 
+                            <input
+                              className="form-check-input me-2 flex-shrink-0"
+                              type="checkbox"
+                              id={`tdp_${tipo.id}`}
+                              checked={checked}
+                              onChange={(e) => handleTipoDatoChange(tipo.id, e.target.checked)}
+                            />
+                            <div className="flex-grow-1 me-2">
+                              <small>{tipo.label}</small>
+                            </div>
+                            <span className={`badge bg-${sensibilidadColor} flex-shrink-0`} style={{fontSize: '0.65rem'}}>
+                              {tipo.sensibilidad === 'muy_alta' ? 'Muy Alta' :
+                               tipo.sensibilidad === 'alta' ? 'Alta' :
+                               tipo.sensibilidad === 'media' ? 'Media' : 'Baja'}
+                            </span>
+                          </label>
                         </div>
-                        <div className="small">
-                          <strong>Descripción:</strong> {activityDescription}
-                        </div>
-                      </div>
+                      );
+                    })}
+                  </div>
+                  {formData.tiposDatosSeleccionados && formData.tiposDatosSeleccionados.length > 0 && (
+                    <div className="mt-2 p-2 bg-light rounded">
+                      <small>
+                        <strong>Tipos seleccionados:</strong> {formData.tiposDatosSeleccionados.length} tipo(s)
+                      </small>
                     </div>
                   )}
                 </div>
 
-                {/* IED: Sección completa */}
-                <div className="mb-4">
-                  <h5 className="fw-bold mb-3">Impacto en los Derechos (IED) *</h5>
-                  
-                  {/* TDP: Tipos de datos personales */}
-                  <div className="mb-4">
-                    <label className="form-label fw-bold">Tipos de datos personales tratados (TDP)</label>
-                    <div className="form-text mb-2">Seleccione los tipos de datos personales que se procesan en esta actividad:</div>
-                    <div className="row g-3">
-                      {tiposDatosPersonales.map(tipo => {
-                        const checked = (formData.tiposDatosSeleccionados || []).includes(tipo.id);
-                        const sensibilidadColor = tipo.sensibilidad === 'muy_alta' ? 'danger' : 
-                                                 tipo.sensibilidad === 'alta' ? 'warning' :
-                                                 tipo.sensibilidad === 'media' ? 'info' : 'secondary';
-                        return (
-                          <div className="col-lg-5 col-xl-5 offset-lg-1 mb-1" key={tipo.id}>
-                            <div className="form-check border rounded p-2 h-100 d-flex align-items-center justify-content-center">
-                              <div className="d-flex align-items-center w-100">
+                {/* 2.2 TAV */}
+                <div className="subsection mb-4">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="subsection-bullet me-2">2.2</span>
+                    <label className="form-label fw-semibold mb-0">Número de titulares afectados y volumen de datos (TAV)</label>
+                  </div>
+                  <div className="row g-2 mt-1">
+                    {[...titularCategories, ...customTitularCategories].map(cat => {
+                      const checked = (formData.titularesSeleccionados || []).includes(cat.id);
+                      return (
+                        <div className="col-md-6" key={cat.id}>
+                          <div className="row g-2 align-items-center">
+                            <div className="col">
+                              <div className="form-check m-0">
                                 <input
-                                  className="form-check-input me-2 flex-shrink-0"
+                                  className="form-check-input"
                                   type="checkbox"
-                                  id={`tdp_${tipo.id}`}
+                                  id={`tit_${cat.id}`}
                                   checked={checked}
-                                  onChange={(e) => handleTipoDatoChange(tipo.id, e.target.checked)}
+                                  onChange={(e) => handleToggleTitularCategory(cat.id, e.target.checked)}
                                 />
-                                <label className="form-check-label d-flex align-items-center w-100" htmlFor={`tdp_${tipo.id}`}>
-                                  <div className="flex-grow-1 me-2">
-                                    <small>{tipo.label}</small>
-                                  </div>
-                                  <span className={`badge bg-${sensibilidadColor} flex-shrink-0`} style={{fontSize: '0.65rem'}}>
-                                    {tipo.sensibilidad === 'muy_alta' ? 'Muy Alta' :
-                                     tipo.sensibilidad === 'alta' ? 'Alta' :
-                                     tipo.sensibilidad === 'media' ? 'Media' : 'Baja'}
-                                  </span>
-                                </label>
+                                <label className="form-check-label" htmlFor={`tit_${cat.id}`}>{cat.label}</label>
                               </div>
                             </div>
+                            <div className="col-auto">
+                              <input
+                                type="number"
+                                min={0}
+                                max={TOTAL_TITULARES_EMPRESA}
+                                className="form-control text-end"
+                                style={{ width: '140px' }}
+                                value={formData.titulares[cat.id] ?? ''}
+                                onChange={(e) => handleTitularCountChange(cat.id, e.target.value)}
+                                placeholder="0"
+                                disabled={!checked}
+                              />
+                            </div>
                           </div>
-                        );
-                      })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Agregar nueva categoría de titular */}
+                  <div className="mt-3">
+                    <div className="input-group">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Nueva categoría (ej. Contratistas)"
+                        value={newTitularName}
+                        onChange={(e) => setNewTitularName(e.target.value)}
+                      />
+                      <button type="button" className="btn btn-outline-primary" onClick={handleAddTitularCategory}>
+                        Agregar categoría
+                      </button>
                     </div>
-                    {formData.tiposDatosSeleccionados && formData.tiposDatosSeleccionados.length > 0 && (
+                  </div>
+                  <div className="form-text mt-1">
+                    Total de titulares (fijo): {TOTAL_TITULARES_EMPRESA.toLocaleString('es-EC')}
+                    {formData.titularesSeleccionados && formData.titularesSeleccionados.length > 0 && (
                       <div className="mt-2 p-2 bg-light rounded">
                         <small>
-                          <strong>Tipos seleccionados:</strong> {formData.tiposDatosSeleccionados.length} tipo(s)
+                          <strong>Clasificación TAV:</strong>
+                          <br />
+                          {(() => {
+                            const totalAfectados = (formData.titularesSeleccionados || []).reduce((sum: number, id: string) => sum + (Number(formData.titulares?.[id]) || 0), 0);
+                            const porcentajeAfectados = TOTAL_TITULARES_EMPRESA > 0 ? (totalAfectados / TOTAL_TITULARES_EMPRESA) * 100 : 0;
+
+                            if (totalAfectados > TOTAL_TITULARES_EMPRESA) {
+                              return (
+                                <span className="text-danger">
+                                  ⚠️ Error: El total de titulares afectados ({totalAfectados.toLocaleString('es-EC')}) excede el total disponible ({TOTAL_TITULARES_EMPRESA.toLocaleString('es-EC')})
+                                </span>
+                              );
+                            }
+
+                            let nivelTAV = '';
+                            if (totalAfectados < 100 || porcentajeAfectados < 0.1) {
+                              nivelTAV = 'Muy bajo';
+                            } else if ((totalAfectados >= 100 && totalAfectados <= 1000) || (porcentajeAfectados >= 0.1 && porcentajeAfectados <= 1)) {
+                              nivelTAV = 'Bajo';
+                            } else if ((totalAfectados >= 1001 && totalAfectados <= 10000) || (porcentajeAfectados >= 1 && porcentajeAfectados <= 10)) {
+                              nivelTAV = 'Medio';
+                            } else if ((totalAfectados >= 10001 && totalAfectados <= 100000) || (porcentajeAfectados >= 10 && porcentajeAfectados <= 50)) {
+                              nivelTAV = 'Alto';
+                            } else {
+                              nivelTAV = 'Muy alto';
+                            }
+
+                            return `Nivel: ${nivelTAV} (${totalAfectados.toLocaleString('es-EC')} titulares - ${porcentajeAfectados.toFixed(4)}%)`;
+                          })()}
                         </small>
                       </div>
                     )}
                   </div>
-
-                  {/* TAV: Número de titulares afectados y volumen de datos */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Número de titulares afectados y volumen de datos (TAV)</label>
-                    <div className="row g-2 mt-1">
-                      {[...titularCategories, ...customTitularCategories].map(cat => {
-                        const checked = (formData.titularesSeleccionados || []).includes(cat.id);
-                        return (
-                          <div className="col-md-6" key={cat.id}>
-                            <div className="row g-2 align-items-center">
-                              <div className="col">
-                                <div className="form-check m-0">
-                                  <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    id={`tit_${cat.id}`}
-                                    checked={checked}
-                                    onChange={(e) => handleToggleTitularCategory(cat.id, e.target.checked)}
-                                  />
-                                  <label className="form-check-label" htmlFor={`tit_${cat.id}`}>{cat.label}</label>
-                                </div>
-                              </div>
-                              <div className="col-auto">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={TOTAL_TITULARES_EMPRESA}
-                                  className="form-control text-end"
-                                  style={{ width: '140px' }}
-                                  value={formData.titulares[cat.id] ?? ''}
-                                  onChange={(e) => handleTitularCountChange(cat.id, e.target.value)}
-                                  placeholder="0"
-                                  disabled={!checked}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {/* Agregar nueva categoría de titular */}
-                    <div className="mt-3">
-                      <div className="input-group">
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="Nueva categoría (ej. Contratistas)"
-                          value={newTitularName}
-                          onChange={(e) => setNewTitularName(e.target.value)}
-                        />
-                        <button type="button" className="btn btn-outline-primary" onClick={handleAddTitularCategory}>
-                          Agregar categoría
-                        </button>
-                      </div>
-                    </div>
-                    <div className="form-text mt-1">
-                      Total de titulares (fijo): {TOTAL_TITULARES_EMPRESA.toLocaleString('es-EC')}
-                      {formData.titularesSeleccionados && formData.titularesSeleccionados.length > 0 && (
-                        <div className="mt-2 p-2 bg-light rounded">
-                          <small>
-                            <strong>Clasificación TAV:</strong>
-                            <br />
-                            {(() => {
-                              const totalAfectados = (formData.titularesSeleccionados || []).reduce((sum: number, id: string) => sum + (Number(formData.titulares?.[id]) || 0), 0);
-                              const porcentajeAfectados = TOTAL_TITULARES_EMPRESA > 0 ? (totalAfectados / TOTAL_TITULARES_EMPRESA) * 100 : 0;
-                              
-                              // Verificar si excede el límite
-                              if (totalAfectados > TOTAL_TITULARES_EMPRESA) {
-                                return (
-                                  <span className="text-danger">
-                                    ⚠️ Error: El total de titulares afectados ({totalAfectados.toLocaleString('es-EC')}) excede el total disponible ({TOTAL_TITULARES_EMPRESA.toLocaleString('es-EC')})
-                                  </span>
-                                );
-                              }
-                              
-                              let nivelTAV = '';
-                              if (totalAfectados < 100 || porcentajeAfectados < 0.1) {
-                                nivelTAV = 'Muy bajo';
-                              } else if ((totalAfectados >= 100 && totalAfectados <= 1000) || (porcentajeAfectados >= 0.1 && porcentajeAfectados <= 1)) {
-                                nivelTAV = 'Bajo';
-                              } else if ((totalAfectados >= 1001 && totalAfectados <= 10000) || (porcentajeAfectados >= 1 && porcentajeAfectados <= 10)) {
-                                nivelTAV = 'Medio';
-                              } else if ((totalAfectados >= 10001 && totalAfectados <= 100000) || (porcentajeAfectados >= 10 && porcentajeAfectados <= 50)) {
-                                nivelTAV = 'Alto';
-                              } else {
-                                nivelTAV = 'Muy alto';
-                              }
-                              
-                              return `Nivel: ${nivelTAV} (${totalAfectados.toLocaleString('es-EC')} titulares - ${porcentajeAfectados.toFixed(4)}%)`;
-                            })()}
-                          </small>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {/* TEV: Grupos especialmente vulnerables */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Grupos de titulares especialmente vulnerables (TEV)</label>
-                    <div className="form-check form-switch mb-2">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="toggleVulnerables"
-                        checked={formData.tieneVulnerables}
-                        onChange={(e) => handleToggleVulnerables(e.target.checked)}
-                      />
-                      <label className="form-check-label" htmlFor="toggleVulnerables">¿Existen grupos vulnerables?</label>
-                    </div>
-                    {formData.tieneVulnerables && (
-                      <div className="row g-2">
-                        {vulnerableGroups.map(g => (
-                          <div className="col-md-6" key={g.id}>
-                            <div className="form-check">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                id={`vg_${g.id}`}
-                                checked={formData.gruposVulnerables.includes(g.id)}
-                                onChange={(e) => handleVulnerableGroupChange(g.id, e.target.checked)}
-                              />
-                              <label className="form-check-label" htmlFor={`vg_${g.id}`}>{g.label}</label>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
 
-                <div className="mb-4">
-                  <label htmlFor="intencionalidad" className="form-label fw-bold">
-                    Intencionalidad - INT *
-                  </label>
-                  <select 
-                    className={`form-select ${!formData.intencionalidad ? 'text-muted' : ''}`} 
-                    id="intencionalidad" 
-                    value={formData.intencionalidad}
-                    onChange={(e) => handleIntencionalidadChange(e.target.value)}
-                    required
-                  >
-                    <option value="" disabled hidden>Seleccione la intencionalidad</option>
-                    {Object.entries(intencionalidadOptions).map(([key, option]) => (
-                      <option key={key} value={key}>{option.name}</option>
-                    ))}
-                  </select>
-                  {descriptions.intencionalidad && (
-                    <div className="mt-2">
-                      <div className="alert alert-warning border-start border-warning border-5">
-                        <div className="d-flex align-items-center justify-content-between mb-2">
-                          <span className="badge bg-warning text-dark">Valor: {intencionalidadOptions[formData.intencionalidad as keyof typeof intencionalidadOptions]?.value}</span>
-                          <i className="bi bi-info-circle"></i>
+                {/* 2.3 TEV */}
+                <div className="subsection mb-3">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="subsection-bullet me-2">2.3</span>
+                    <label className="form-label fw-semibold mb-0">Grupos de titulares especialmente vulnerables (TEV)</label>
+                  </div>
+                  <div className="form-check form-switch mb-2">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="toggleVulnerables"
+                      checked={formData.tieneVulnerables}
+                      onChange={(e) => handleToggleVulnerables(e.target.checked)}
+                    />
+                    <label className="form-check-label" htmlFor="toggleVulnerables">¿Existen grupos vulnerables?</label>
+                  </div>
+                  {formData.tieneVulnerables && (
+                    <div className="row g-2">
+                      {vulnerableGroups.map(g => (
+                        <div className="col-md-6" key={g.id}>
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`vg_${g.id}`}
+                              checked={formData.gruposVulnerables.includes(g.id)}
+                              onChange={(e) => handleVulnerableGroupChange(g.id, e.target.checked)}
+                            />
+                            <label className="form-check-label" htmlFor={`vg_${g.id}`}>{g.label}</label>
+                          </div>
                         </div>
-                        <div className="small">{descriptions.intencionalidad}</div>
-                      </div>
+                      ))}
                     </div>
                   )}
                 </div>
+              </div>
 
-                {/* RER se maneja como un valor fijo en la lógica; UI removida */}
+              {/* Paso 3: INT */}
+              <div className="section mb-4">
+                <div className="section-title d-flex align-items-center mb-3">
+                  <span className="section-number me-2">3</span>
+                  <h5 className="mb-0 fw-bold">Intencionalidad (INT) *</h5>
+                </div>
+                <select
+                  className={`form-select ${!formData.intencionalidad ? 'text-muted' : ''}`}
+                  id="intencionalidad"
+                  value={formData.intencionalidad}
+                  onChange={(e) => handleIntencionalidadChange(e.target.value)}
+                  required
+                >
+                  <option value="" disabled hidden>Seleccione la intencionalidad</option>
+                  {Object.entries(intencionalidadOptions).map(([key, option]) => (
+                    <option key={key} value={key}>{option.name}</option>
+                  ))}
+                </select>
+                {descriptions.intencionalidad && (
+                  <div className="mt-2">
+                    <div className="alert alert-warning border-start border-warning border-5">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <span className="badge bg-warning text-dark">Valor: {intencionalidadOptions[formData.intencionalidad as keyof typeof intencionalidadOptions]?.value}</span>
+                        <i className="bi bi-info-circle"></i>
+                      </div>
+                      <div className="small">{descriptions.intencionalidad}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
+              {/* Acción */}
+              <div className="section">
                 <button type="submit" className="btn btn-primary btn-lg w-100">
                   <i className="bi bi-calculator me-2"></i>
                   Calcular Multa MPRIV
                 </button>
-              </form>
-            </div>
+              </div>
+            </form>
           </div>
         </div>
+      </div>
 
-        <div className="col-lg-6 mb-4">
-          <div className="card h-100">
-            <div className="card-header bg-success text-white">
-              <h3 className="card-title mb-0">
-                <i className="bi bi-graph-up me-2"></i>
-                Resultados del Cálculo
-              </h3>
-            </div>
-            <div className="card-body">
+      {/* Sección inferior: Resultados del Cálculo */}
+      <div className="mb-4">
+        <div className="card">
+          <div className="card-header bg-success text-white">
+            <h3 className="card-title mb-0">
+              <i className="bi bi-graph-up me-2"></i>
+              Resultados del Cálculo
+            </h3>
+          </div>
+          <div className="card-body">
               {!results ? (
                 <div className="text-center text-muted py-5">
                   <i className="bi bi-calculator display-1 text-muted mb-4"></i>
@@ -981,7 +998,6 @@ const MPRIVCalculator: React.FC = () => {
                   </div>
                 </div>
               )}
-            </div>
           </div>
         </div>
       </div>
