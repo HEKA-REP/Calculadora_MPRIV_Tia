@@ -6,13 +6,21 @@ import {
   areas, 
   intencionalidadOptions, 
   VDN,
+  titularCategories,
+  vulnerableGroups,
+  tiposDatosPersonales,
+  WEIGHTS,
+  IED_NORMALIZATION,
+  RER_FIXED,
+  TOTAL_TITULARES_EMPRESA,
+  SDI_WEIGHTS,
   type Activity
 } from '../data/mprivData';
 
 interface FormData {
   area: string;
   activity: string;
-  // IED inputs (según PDF)
+  // IED inputs 
   titulares: Record<string, number>; // cantidades por categoría (clientes, proveedores, etc.)
   titularesSeleccionados: string[]; // categorías marcadas por el usuario
   tieneVulnerables: boolean; // toggle para mostrar grupos vulnerables
@@ -60,104 +68,9 @@ const MPRIVCalculator: React.FC = () => {
   const [histSeries, setHistSeries] = useState<{ labels: string[]; counts: number[] } | null>(null);
   const [simRunning, setSimRunning] = useState(false);
 
-  // Constantes UI para TAV/TEV (pueden moverse a data/ si se requiere)
-  const titularCategories: { id: string; label: string }[] = [
-    { id: 'clientes', label: 'Clientes' },
-    { id: 'proveedores', label: 'Proveedores' },
-    { id: 'empleados', label: 'Empleados' },
-    { id: 'prospectos', label: 'Prospectos / Leads' },
-    { id: 'visitantes', label: 'Visitantes (Sitio/App)' }
-  ];
-
-  const vulnerableGroups: { id: string; label: string }[] = [
-    { id: 'ninos_adolescentes', label: 'Niñas, niños y adolescentes' },
-    { id: 'adultos_mayores', label: 'Personas adultas mayores' },
-    { id: 'personas_discapacitadas', label: 'Personas con discapacidad' },
-    { id: 'comunidades_indigenas', label: 'Pueblos y nacionalidades indígenas' },
-    { id: 'migrantes_refugiados', label: 'Personas migrantes/refugiadas' },
-    { id: 'privadas_libertad', label: 'Personas privadas de libertad' }
-  ];
-
-  // Categorías de tipos de datos personales con sus parámetros de sensibilidad
-  const tiposDatosPersonales: { 
-    id: string; 
-    label: string; 
-    sensibilidad: 'baja' | 'media' | 'alta' | 'muy_alta';
-    params: { a: number; b: number; c: number };
-  }[] = [
-    { 
-      id: 'identificativos', 
-      label: 'Datos identificativos básicos (nombre, cédula, dirección)', 
-      sensibilidad: 'baja',
-      params: { a: 10, b: 20, c: 30 }
-    },
-    { 
-      id: 'contacto', 
-      label: 'Datos de contacto (email, teléfono)', 
-      sensibilidad: 'baja',
-      params: { a: 15, b: 25, c: 35 }
-    },
-    { 
-      id: 'laborales', 
-      label: 'Datos laborales (puesto, salario, empresa)', 
-      sensibilidad: 'media',
-      params: { a: 25, b: 40, c: 55 }
-    },
-    { 
-      id: 'financieros', 
-      label: 'Datos financieros (tarjetas, cuentas bancarias)', 
-      sensibilidad: 'alta',
-      params: { a: 50, b: 70, c: 85 }
-    },
-    { 
-      id: 'biometricos', 
-      label: 'Datos biométricos (huellas, reconocimiento facial)', 
-      sensibilidad: 'muy_alta',
-      params: { a: 70, b: 85, c: 95 }
-    },
-    { 
-      id: 'salud', 
-      label: 'Datos de salud (historial médico, condiciones)', 
-      sensibilidad: 'muy_alta',
-      params: { a: 75, b: 90, c: 100 }
-    },
-    { 
-      id: 'ubicacion', 
-      label: 'Datos de ubicación (GPS, geolocalización)', 
-      sensibilidad: 'media',
-      params: { a: 30, b: 45, c: 60 }
-    },
-    { 
-      id: 'comportamiento', 
-      label: 'Datos de comportamiento (navegación, preferencias)', 
-      sensibilidad: 'media',
-      params: { a: 20, b: 35, c: 50 }
-    },
-    { 
-      id: 'ideologicos', 
-      label: 'Datos ideológicos (religión, política, orientación sexual)', 
-      sensibilidad: 'muy_alta',
-      params: { a: 65, b: 80, c: 95 }
-    }
-  ];
-
-  // Ponderaciones según PDF
-  const WEIGHTS = {
-    TDP: 0.4,
-    TAV: 0.2,
-    NDV: 0.2,
-    TEV: 0.2
-  } as const;
-
-  // Factor de normalización final (PDF: 0.6)
-  const IED_NORMALIZATION = 0.6;
-  // Valor fijo para RER (Reiteración/Reincidencia). Ajusta según política
-  const RER_FIXED = 0; // 0 = No aplica (sin antecedentes)
+  // Catálogos y constantes se importan desde data/mprivData
 
   const pert = (a: number, b: number, c: number) => (a + 4 * b + c) / 6; // 0-100
-
-  // Total de titulares de la empresa (actualizado según nuevos requerimientos)
-  const TOTAL_TITULARES_EMPRESA = 4500000;
 
   const formatCurrency = (amount: number): string => {
     return '$' + Math.round(amount).toLocaleString('es-EC');
@@ -180,7 +93,7 @@ const MPRIVCalculator: React.FC = () => {
     const PDI = activityData.pdi / 100;
     const CDI = (VDN * RDM_min) + (PDI * (VDN * (RDM_max - RDM_min)));
 
-    // 1) TDP (Nueva lógica por tipos de datos seleccionados)
+    // 1) TDP
     let TDP_weighted = 0;
     if (data.tiposDatosSeleccionados && data.tiposDatosSeleccionados.length > 0) {
       // Obtener los parámetros de cada tipo seleccionado
@@ -221,7 +134,7 @@ const MPRIVCalculator: React.FC = () => {
       TDP_weighted = (TDP_expected / 100) * WEIGHTS.TDP;
     }
 
-    // 2) TAV (Nueva lógica por niveles según tabla)
+    // 2) TAV
     const totalAfectados = (data.titularesSeleccionados || []).reduce((sum, id) => sum + (Number(data.titulares?.[id]) || 0), 0);
     
     // Validación: Si excede el total de titulares, ajustar al máximo
@@ -247,7 +160,7 @@ const MPRIVCalculator: React.FC = () => {
     const TAV_expected = pert(tavParams.a * 100, tavParams.b * 100, tavParams.c * 100); // Convertir a escala 0-100
     const TAV_weighted = (TAV_expected / 100) * WEIGHTS.TAV; // 0-0.2
 
-    // 3) NDV (interno por severidad; ejemplo PDF 50/70/90 para grave)
+    // 3) NDV (interno por severidad)
     const ndvPert = activityData.severity === 'grave'
       ? { a: 50, b: 70, c: 90 }
       : { a: 20, b: 40, c: 60 };
@@ -266,18 +179,28 @@ const MPRIVCalculator: React.FC = () => {
     }
 
     const IED_sum = TDP_weighted + TAV_weighted + NDV_weighted + TEV_weighted; // 0-1
-  const IED = IED_sum * IED_NORMALIZATION; // normalización 0.6 (PDF)
-  const INT = intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions]?.value || 0;
+  const IED = IED_sum * IED_NORMALIZATION; // normalización 0.6 
+  // INT ahora en 0-100 por PERT; fallback a value si no hay pert
+  const intOpt = intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions] as any;
+  const INT_percent = intOpt?.pert ? pert(intOpt.pert.a, intOpt.pert.b, intOpt.pert.c) : (intOpt?.value || 0);
   const RER = RER_FIXED;
 
-    const SDI = 2 * (IED + INT + RER);
+    // SDI con pesos: convertir a puntos 0-10 antes de mezclar
+    const IED_points = IED * 10;           // IED 0-1 -> 0-10
+    const INT_points = INT_percent / 10;   // INT 0-100 -> 0-10
+    const RER_points = RER;                // mantener escala usada previamente (0-10 si se parametriza)
+    const SDI = 2 * (
+      SDI_WEIGHTS.IED * IED_points +
+      SDI_WEIGHTS.INT * INT_points +
+      SDI_WEIGHTS.RER * RER_points
+    );
     const multaFinal = CDI * SDI;
 
     return {
       PDI: activityData.pdi,
       CDI,
       IED,
-      INT,
+  INT: INT_points,
       RER,
       SDI,
       multaFinal,
@@ -286,12 +209,12 @@ const MPRIVCalculator: React.FC = () => {
     };
   };
 
-  // Simulación Monte Carlo basada en la versión PHP
+  // Simulación Monte Carlo
   const runMonteCarloSimulation = (iterations = 1000) => {
     if (!results) return;
     setSimRunning(true);
     
-    // Reproducir lógica exacta del PHP: variación en PDI (±10%) e IED/INT/RER (±15%)
+    // Variación en PDI (±10%) e IED/INT/RER (±15%)
     const isGrave = results.severity === 'grave';
     const RDM_min = isGrave ? 0.007 : 0.001;
     const RDM_max = isGrave ? 0.010 : 0.007;
@@ -300,20 +223,27 @@ const MPRIVCalculator: React.FC = () => {
     const fines: number[] = [];
 
     for (let i = 0; i < iterations; i++) {
-      // Variabilidad en PDI (±10%) - igual que PHP: 0.9 + Math.random() * 0.2
+      // Variabilidad en PDI (±10%) - 0.9 + Math.random() * 0.2
       const pdiVariation = 0.9 + Math.random() * 0.2; 
       
-      // Variabilidad en factores SDI (±15%) - igual que PHP: 0.85 + Math.random() * 0.3
-      const iedVar = results.IED * (0.85 + Math.random() * 0.3);
-      const intVar = results.INT * (0.85 + Math.random() * 0.3);
-      const rerVar = results.RER * (0.85 + Math.random() * 0.3);
+      // Variabilidad en factores SDI (±15%) - 0.85 + Math.random() * 0.3
+  const iedVar = results.IED * (0.85 + Math.random() * 0.3);
+  const intVar = results.INT * (0.85 + Math.random() * 0.3);
+  const rerVar = results.RER * (0.85 + Math.random() * 0.3);
 
-      // Recalcular CDI con variabilidad - exacto del PHP
+      // Recalcular CDI con variabilidad
       const variablePDI = (results.PDI * pdiVariation) / 100; // PDI a decimal con variación
       const simulatedCDI = (VDN * RDM_min) + (variablePDI * (VDN * (RDM_max - RDM_min)));
       
-      // Recalcular SDI con variabilidad - siguiendo documento (sin dividir por 8)
-      const simulatedSDI = 2 * (iedVar + intVar + rerVar);
+      // Recalcular SDI con variabilidad (usar mismo esquema de puntos/pesos)
+      const iedPointsVar = iedVar * 10;      // IED 0-1 -> 0-10
+      const intPointsVar = intVar;           // INT ya almacenado en puntos 0-10
+      const rerPointsVar = rerVar;           // RER puntos
+      const simulatedSDI = 2 * (
+        SDI_WEIGHTS.IED * iedPointsVar +
+        SDI_WEIGHTS.INT * intPointsVar +
+        SDI_WEIGHTS.RER * rerPointsVar
+      );
 
       // Multa final - exacto del documento
       const finalFine = Math.max(0, simulatedCDI * simulatedSDI);
@@ -328,7 +258,7 @@ const MPRIVCalculator: React.FC = () => {
       fines.push(finalFine);
     }
 
-    // Calcular estadísticas - exacto del PHP
+    // Calcular estadísticas
     const sortedFines = [...fines].sort((a, b) => a - b);
     const avgFine = fines.reduce((a, b) => a + b, 0) / fines.length;
     const minFine = Math.min(...fines);
@@ -337,7 +267,7 @@ const MPRIVCalculator: React.FC = () => {
 
     setSimStats({ min: minFine, avg: avgFine, median: medianFine, max: maxFine });
 
-    // Construir histograma (20 bins) - exacto del PHP
+    // Construir histograma (20 bins)
     const bins = 20;
     const binSize = (maxFine - minFine) / bins;
     const histogram = Array.from({ length: bins }, (_, i) => {
@@ -697,7 +627,6 @@ const MPRIVCalculator: React.FC = () => {
                     </div>
                   </div>
                   <div className="form-text mt-1">
-                    Total de titulares (fijo): {TOTAL_TITULARES_EMPRESA.toLocaleString('es-EC')}
                     {formData.titularesSeleccionados && formData.titularesSeleccionados.length > 0 && (
                       <div className="mt-2 p-2 bg-light rounded">
                         <small>
@@ -780,7 +709,7 @@ const MPRIVCalculator: React.FC = () => {
                   <h5 className="mb-0 fw-bold">Intencionalidad (INT) *</h5>
                 </div>
                 <select
-                  className={`form-select ${!formData.intencionalidad ? 'text-muted' : ''}`}
+                  className={`form-select mb-3 ${!formData.intencionalidad ? 'text-muted' : ''}`}
                   id="intencionalidad"
                   value={formData.intencionalidad}
                   onChange={(e) => handleIntencionalidadChange(e.target.value)}
@@ -793,13 +722,20 @@ const MPRIVCalculator: React.FC = () => {
                 </select>
                 {descriptions.intencionalidad && (
                   <div className="mt-2">
-                    <div className="alert alert-warning border-start border-warning border-5">
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <span className="badge bg-warning text-dark">Valor: {intencionalidadOptions[formData.intencionalidad as keyof typeof intencionalidadOptions]?.value}</span>
-                        <i className="bi bi-info-circle"></i>
-                      </div>
-                      <div className="small">{descriptions.intencionalidad}</div>
-                    </div>
+                    {(() => {
+                      const key = formData.intencionalidad as keyof typeof intencionalidadOptions;
+                      // Colores según gravedad de la intencionalidad
+                      const alertClass =
+                        key === 'sin_intencion' ? 'alert-success border-success' :
+                        key === 'negligencia_leve' ? 'alert-warning border-warning' :
+                        key === 'negligencia_grave' ? 'alert-danger border-danger' :
+                        'alert-dark border-dark'; // intencion_directa diferenciado de "grave"
+                      return (
+                        <div className={`alert ${alertClass} border-start border-5`}>
+                          <div className="small"><strong>Descripción:</strong> {descriptions.intencionalidad}</div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

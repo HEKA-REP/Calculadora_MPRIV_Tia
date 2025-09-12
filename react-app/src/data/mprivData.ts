@@ -173,24 +173,28 @@ export const impactoDerechosOptions = {
 
 export const intencionalidadOptions = {
   sin_intencion: {
-    name: "Sin Intención (1-3)",
-    value: 2,
-    description: "Error no intencional por desconocimiento"
+  name: "Sin Intención (10-30)",
+  value: 20,
+  description: "Error no intencional por desconocimiento",
+  pert: { a: 10, b: 20, c: 30 }
   },
   negligencia_leve: {
-    name: "Negligencia Leve (4-5)",
-    value: 4.5,
-    description: "Descuido menor en procedimientos"
+  name: "Negligencia Leve (40-50)",
+  value: 45,
+  description: "Descuido menor en procedimientos",
+  pert: { a: 40, b: 45, c: 50 }
   },
   negligencia_grave: {
-    name: "Negligencia Grave (6-7)",
-    value: 6.5,
-    description: "Descuido grave en obligaciones conocidas"
+  name: "Negligencia Grave (60-70)",
+  value: 65,
+  description: "Descuido grave en obligaciones conocidas",
+  pert: { a: 60, b: 65, c: 70 }
   },
   intencion_directa: {
-    name: "Intención Directa (8-10)",
-    value: 9,
-    description: "Violación consciente e intencional"
+  name: "Intención Directa (80-100)",
+  value: 90,
+  description: "Violación consciente e intencional",
+  pert: { a: 80, b: 90, c: 100 }
   }
 };
 
@@ -216,3 +220,68 @@ export const reincidenciaOptions = {
     description: "Múltiples infracciones previas graves"
   }
 };
+
+// ---- Catálogos y constantes compartidas para el cálculo ----
+
+export type Sensibilidad = 'baja' | 'media' | 'alta' | 'muy_alta';
+
+export interface TitularCategory { id: string; label: string }
+export interface VulnerableGroup { id: string; label: string }
+export interface TipoDatoPersonal {
+  id: string;
+  label: string;
+  sensibilidad: Sensibilidad;
+  params: { a: number; b: number; c: number };
+}
+
+// Catálogo: categorías de titulares (TAV)
+export const titularCategories: TitularCategory[] = [
+  { id: 'clientes', label: 'Clientes' },
+  { id: 'proveedores', label: 'Proveedores' },
+  { id: 'empleados', label: 'Empleados' },
+  { id: 'prospectos', label: 'Prospectos / Leads' },
+  { id: 'visitantes', label: 'Visitantes (Sitio/App)' }
+];
+
+// Catálogo: grupos vulnerables (TEV)
+export const vulnerableGroups: VulnerableGroup[] = [
+  { id: 'ninos_adolescentes', label: 'Niñas, niños y adolescentes' },
+  { id: 'adultos_mayores', label: 'Personas adultas mayores' },
+  { id: 'personas_discapacitadas', label: 'Personas con discapacidad' },
+  { id: 'comunidades_indigenas', label: 'Pueblos y nacionalidades indígenas' },
+  { id: 'migrantes_refugiados', label: 'Personas migrantes/refugiados' },
+  { id: 'privadas_libertad', label: 'Personas privadas de libertad' }
+];
+
+// Catálogo: tipos de datos personales (TDP)
+export const tiposDatosPersonales: TipoDatoPersonal[] = [
+  { id: 'identificativos', label: 'Datos identificativos básicos (nombre, cédula, dirección)', sensibilidad: 'baja', params: { a: 10, b: 20, c: 30 } },
+  { id: 'contacto', label: 'Datos de contacto (email, teléfono)', sensibilidad: 'baja', params: { a: 15, b: 25, c: 35 } },
+  { id: 'laborales', label: 'Datos laborales (puesto, salario, empresa)', sensibilidad: 'media', params: { a: 25, b: 40, c: 55 } },
+  { id: 'financieros', label: 'Datos financieros (tarjetas, cuentas bancarias)', sensibilidad: 'alta', params: { a: 50, b: 70, c: 85 } },
+  { id: 'biometricos', label: 'Datos biométricos (huellas, reconocimiento facial)', sensibilidad: 'muy_alta', params: { a: 70, b: 85, c: 95 } },
+  { id: 'salud', label: 'Datos de salud (historial médico, condiciones)', sensibilidad: 'muy_alta', params: { a: 75, b: 90, c: 100 } },
+  { id: 'ubicacion', label: 'Datos de ubicación (GPS, geolocalización)', sensibilidad: 'media', params: { a: 30, b: 45, c: 60 } },
+  { id: 'comportamiento', label: 'Datos de comportamiento (navegación, preferencias)', sensibilidad: 'media', params: { a: 20, b: 35, c: 50 } },
+  { id: 'ideologicos', label: 'Datos ideológicos (religión, política, orientación sexual)', sensibilidad: 'muy_alta', params: { a: 65, b: 80, c: 95 } }
+];
+
+// Ponderaciones y constantes del modelo
+export const WEIGHTS = {
+  TDP: 0.4,
+  TAV: 0.2,
+  NDV: 0.2,
+  TEV: 0.2,
+} as const;
+
+export const IED_NORMALIZATION = 0.6; // Factor de normalización final del IED
+export const RER_FIXED = 0;            // Reiteración/Reincidencia fija (0 = no aplica)
+export const TOTAL_TITULARES_EMPRESA = 4_500_000; // Total máximo de titulares
+
+// Pesos del SDI conforme a la guía: IED 60%, INT 40%, RER opcional con 20% adicional
+// Nota: En la guía, RER se aplica como agravante adicional (20%) en casos que corresponda.
+export const SDI_WEIGHTS = {
+  IED: 0.6,
+  INT: 0.4,
+  RER: 0.2,
+} as const;
