@@ -17,6 +17,8 @@ interface FormData {
   titularesSeleccionados: string[]; // categorías marcadas por el usuario
   tieneVulnerables: boolean; // toggle para mostrar grupos vulnerables
   gruposVulnerables: string[]; // ids de grupos seleccionados
+  // TDP - Tipos de datos personales
+  tiposDatosSeleccionados: string[]; // ids de tipos de datos seleccionados
   // Otros factores
   intencionalidad: string;
 }
@@ -41,6 +43,7 @@ const MPRIVCalculator: React.FC = () => {
     titularesSeleccionados: [],
     tieneVulnerables: false,
     gruposVulnerables: [],
+    tiposDatosSeleccionados: [],
     intencionalidad: '',
   });
 
@@ -75,6 +78,69 @@ const MPRIVCalculator: React.FC = () => {
     { id: 'privadas_libertad', label: 'Personas privadas de libertad' }
   ];
 
+  // Categorías de tipos de datos personales con sus parámetros de sensibilidad
+  const tiposDatosPersonales: { 
+    id: string; 
+    label: string; 
+    sensibilidad: 'baja' | 'media' | 'alta' | 'muy_alta';
+    params: { a: number; b: number; c: number };
+  }[] = [
+    { 
+      id: 'identificativos', 
+      label: 'Datos identificativos básicos (nombre, cédula, dirección)', 
+      sensibilidad: 'baja',
+      params: { a: 10, b: 20, c: 30 }
+    },
+    { 
+      id: 'contacto', 
+      label: 'Datos de contacto (email, teléfono)', 
+      sensibilidad: 'baja',
+      params: { a: 15, b: 25, c: 35 }
+    },
+    { 
+      id: 'laborales', 
+      label: 'Datos laborales (puesto, salario, empresa)', 
+      sensibilidad: 'media',
+      params: { a: 25, b: 40, c: 55 }
+    },
+    { 
+      id: 'financieros', 
+      label: 'Datos financieros (tarjetas, cuentas bancarias)', 
+      sensibilidad: 'alta',
+      params: { a: 50, b: 70, c: 85 }
+    },
+    { 
+      id: 'biometricos', 
+      label: 'Datos biométricos (huellas, reconocimiento facial)', 
+      sensibilidad: 'muy_alta',
+      params: { a: 70, b: 85, c: 95 }
+    },
+    { 
+      id: 'salud', 
+      label: 'Datos de salud (historial médico, condiciones)', 
+      sensibilidad: 'muy_alta',
+      params: { a: 75, b: 90, c: 100 }
+    },
+    { 
+      id: 'ubicacion', 
+      label: 'Datos de ubicación (GPS, geolocalización)', 
+      sensibilidad: 'media',
+      params: { a: 30, b: 45, c: 60 }
+    },
+    { 
+      id: 'comportamiento', 
+      label: 'Datos de comportamiento (navegación, preferencias)', 
+      sensibilidad: 'media',
+      params: { a: 20, b: 35, c: 50 }
+    },
+    { 
+      id: 'ideologicos', 
+      label: 'Datos ideológicos (religión, política, orientación sexual)', 
+      sensibilidad: 'muy_alta',
+      params: { a: 65, b: 80, c: 95 }
+    }
+  ];
+
   // Ponderaciones según PDF
   const WEIGHTS = {
     TDP: 0.4,
@@ -90,9 +156,8 @@ const MPRIVCalculator: React.FC = () => {
 
   const pert = (a: number, b: number, c: number) => (a + 4 * b + c) / 6; // 0-100
 
-  // Total de titulares de la empresa (dato fijo "quemado")
-  // TODO: Ajustar este valor al total real de la empresa.
-  const TOTAL_TITULARES_EMPRESA = 170000000;
+  // Total de titulares de la empresa (actualizado según nuevos requerimientos)
+  const TOTAL_TITULARES_EMPRESA = 4500000;
 
   const formatCurrency = (amount: number): string => {
     return '$' + Math.round(amount).toLocaleString('es-EC');
@@ -115,20 +180,71 @@ const MPRIVCalculator: React.FC = () => {
     const PDI = activityData.pdi / 100;
     const CDI = (VDN * RDM_min) + (PDI * (VDN * (RDM_max - RDM_min)));
 
-    // 1) TDP (interno por severidad; valores ejemplo del PDF)
-    const tdpPert = activityData.severity === 'grave'
-      ? { a: 30, b: 50, c: 70 }
-      : { a: 10, b: 30, c: 50 };
-    const TDP_expected = pert(tdpPert.a, tdpPert.b, tdpPert.c); // 0-100
-    const TDP_weighted = (TDP_expected / 100) * WEIGHTS.TDP; // 0-0.4
+    // 1) TDP (Nueva lógica por tipos de datos seleccionados)
+    let TDP_weighted = 0;
+    if (data.tiposDatosSeleccionados && data.tiposDatosSeleccionados.length > 0) {
+      // Obtener los parámetros de cada tipo seleccionado
+      const tiposSeleccionados = data.tiposDatosSeleccionados.map(id => 
+        tiposDatosPersonales.find(tipo => tipo.id === id)
+      ).filter(tipo => tipo !== undefined);
+      
+      if (tiposSeleccionados.length > 0) {
+        // Calcular el promedio ponderado de los parámetros
+        let totalA = 0, totalB = 0, totalC = 0;
+        let pesoTotal = 0;
+        
+        tiposSeleccionados.forEach(tipo => {
+          // Peso según sensibilidad: muy_alta=4, alta=3, media=2, baja=1
+          const peso = tipo!.sensibilidad === 'muy_alta' ? 4 : 
+                      tipo!.sensibilidad === 'alta' ? 3 :
+                      tipo!.sensibilidad === 'media' ? 2 : 1;
+          
+          totalA += tipo!.params.a * peso;
+          totalB += tipo!.params.b * peso;
+          totalC += tipo!.params.c * peso;
+          pesoTotal += peso;
+        });
+        
+        // Promedio ponderado
+        const avgA = totalA / pesoTotal;
+        const avgB = totalB / pesoTotal;
+        const avgC = totalC / pesoTotal;
+        
+        const TDP_expected = pert(avgA, avgB, avgC); // 0-100
+        TDP_weighted = (TDP_expected / 100) * WEIGHTS.TDP; // 0-0.4
+      }
+    }
+    
+    // Si no hay tipos seleccionados, usar valor mínimo
+    if (TDP_weighted === 0 && (!data.tiposDatosSeleccionados || data.tiposDatosSeleccionados.length === 0)) {
+      const TDP_expected = pert(5, 10, 15); // Valores mínimos por defecto
+      TDP_weighted = (TDP_expected / 100) * WEIGHTS.TDP;
+    }
 
-    // 2) TAV (usuario: % de titulares afectados en relación al total)
-  const totalAfectados = (data.titularesSeleccionados || []).reduce((sum, id) => sum + (Number(data.titulares?.[id]) || 0), 0);
-  const bTAV = TOTAL_TITULARES_EMPRESA > 0 ? Math.min(100, Math.max(0, (totalAfectados / TOTAL_TITULARES_EMPRESA) * 100)) : 0;
-    const margin = 10; // +/- 10% en ausencia de a/c explícitos
-    const aTAV = Math.max(0, bTAV - margin);
-    const cTAV = Math.min(100, bTAV + margin);
-    const TAV_expected = pert(aTAV, bTAV, cTAV);
+    // 2) TAV (Nueva lógica por niveles según tabla)
+    const totalAfectados = (data.titularesSeleccionados || []).reduce((sum, id) => sum + (Number(data.titulares?.[id]) || 0), 0);
+    
+    // Validación: Si excede el total de titulares, ajustar al máximo
+    const totalAfectadosValid = Math.min(totalAfectados, TOTAL_TITULARES_EMPRESA);
+    const porcentajeAfectados = TOTAL_TITULARES_EMPRESA > 0 ? (totalAfectadosValid / TOTAL_TITULARES_EMPRESA) * 100 : 0;
+
+    // Determinar nivel TAV según conteo absoluto o porcentaje (el que primero aplique)
+    let tavParams = { a: 0, b: 0, c: 0 };
+
+    if (totalAfectadosValid < 100 || porcentajeAfectados < 0.1) {
+      tavParams = { a: 0.05, b: 0.10, c: 0.20 };
+    } else if ((totalAfectadosValid >= 100 && totalAfectadosValid <= 1000) || (porcentajeAfectados >= 0.1 && porcentajeAfectados <= 1)) {
+      tavParams = { a: 0.20, b: 0.30, c: 0.40 };
+    } else if ((totalAfectadosValid >= 1001 && totalAfectadosValid <= 10000) || (porcentajeAfectados >= 1 && porcentajeAfectados <= 10)) {
+      tavParams = { a: 0.40, b: 0.50, c: 0.60 };
+    } else if ((totalAfectadosValid >= 10001 && totalAfectadosValid <= 100000) || (porcentajeAfectados >= 10 && porcentajeAfectados <= 50)) {
+      tavParams = { a: 0.60, b: 0.75, c: 0.85 };
+    } else {
+      tavParams = { a: 0.85, b: 0.95, c: 1.00 };
+    }
+
+    // Aplicar distribución triangular (PERT) al nivel determinado
+    const TAV_expected = pert(tavParams.a * 100, tavParams.b * 100, tavParams.c * 100); // Convertir a escala 0-100
     const TAV_weighted = (TAV_expected / 100) * WEIGHTS.TAV; // 0-0.2
 
     // 3) NDV (interno por severidad; ejemplo PDF 50/70/90 para grave)
@@ -154,7 +270,7 @@ const MPRIVCalculator: React.FC = () => {
   const INT = intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions]?.value || 0;
   const RER = RER_FIXED;
 
-    const SDI = (2 * (IED + INT + RER)) / 8;
+    const SDI = 2 * (IED + INT + RER);
     const multaFinal = CDI * SDI;
 
     return {
@@ -196,10 +312,10 @@ const MPRIVCalculator: React.FC = () => {
       const variablePDI = (results.PDI * pdiVariation) / 100; // PDI a decimal con variación
       const simulatedCDI = (VDN * RDM_min) + (variablePDI * (VDN * (RDM_max - RDM_min)));
       
-      // Recalcular SDI con variabilidad - exacto del PHP
-      const simulatedSDI = (2 * (iedVar + intVar + rerVar)) / 8;
+      // Recalcular SDI con variabilidad - siguiendo documento (sin dividir por 8)
+      const simulatedSDI = 2 * (iedVar + intVar + rerVar);
 
-      // Multa final - exacto del PHP
+      // Multa final - exacto del documento
       const finalFine = Math.max(0, simulatedCDI * simulatedSDI);
 
       simulationResults.push({
@@ -330,7 +446,13 @@ const MPRIVCalculator: React.FC = () => {
 
   // Handlers para TAV/TEV
   const handleTitularCountChange = (id: string, value: string) => {
-    const num = Number(value.replace(/[^0-9.]/g, '')) || 0;
+    let num = Number(value.replace(/[^0-9.]/g, '')) || 0;
+    
+    // Limitar al total máximo de titulares
+    if (num > TOTAL_TITULARES_EMPRESA) {
+      num = TOTAL_TITULARES_EMPRESA;
+    }
+    
     setFormData(prev => ({ ...prev, titulares: { ...prev.titulares, [id]: num } }));
   };
 
@@ -353,6 +475,15 @@ const MPRIVCalculator: React.FC = () => {
       gruposVulnerables: checked
         ? Array.from(new Set([...(prev.gruposVulnerables || []), id]))
         : (prev.gruposVulnerables || []).filter(g => g !== id)
+    }));
+  };
+
+  const handleTipoDatoChange = (id: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      tiposDatosSeleccionados: checked
+        ? Array.from(new Set([...(prev.tiposDatosSeleccionados || []), id]))
+        : (prev.tiposDatosSeleccionados || []).filter(t => t !== id)
     }));
   };
 
@@ -454,6 +585,53 @@ const MPRIVCalculator: React.FC = () => {
                 {/* IED: Sección completa */}
                 <div className="mb-4">
                   <h5 className="fw-bold mb-3">Impacto en los Derechos (IED) *</h5>
+                  
+                  {/* TDP: Tipos de datos personales */}
+                  <div className="mb-4">
+                    <label className="form-label fw-bold">Tipos de datos personales tratados (TDP)</label>
+                    <div className="form-text mb-2">Seleccione los tipos de datos personales que se procesan en esta actividad:</div>
+                    <div className="row g-3">
+                      {tiposDatosPersonales.map(tipo => {
+                        const checked = (formData.tiposDatosSeleccionados || []).includes(tipo.id);
+                        const sensibilidadColor = tipo.sensibilidad === 'muy_alta' ? 'danger' : 
+                                                 tipo.sensibilidad === 'alta' ? 'warning' :
+                                                 tipo.sensibilidad === 'media' ? 'info' : 'secondary';
+                        return (
+                          <div className="col-lg-5 col-xl-5 offset-lg-1 mb-1" key={tipo.id}>
+                            <div className="form-check border rounded p-2 h-100 d-flex align-items-center justify-content-center">
+                              <div className="d-flex align-items-center w-100">
+                                <input
+                                  className="form-check-input me-2 flex-shrink-0"
+                                  type="checkbox"
+                                  id={`tdp_${tipo.id}`}
+                                  checked={checked}
+                                  onChange={(e) => handleTipoDatoChange(tipo.id, e.target.checked)}
+                                />
+                                <label className="form-check-label d-flex align-items-center w-100" htmlFor={`tdp_${tipo.id}`}>
+                                  <div className="flex-grow-1 me-2">
+                                    <small>{tipo.label}</small>
+                                  </div>
+                                  <span className={`badge bg-${sensibilidadColor} flex-shrink-0`} style={{fontSize: '0.65rem'}}>
+                                    {tipo.sensibilidad === 'muy_alta' ? 'Muy Alta' :
+                                     tipo.sensibilidad === 'alta' ? 'Alta' :
+                                     tipo.sensibilidad === 'media' ? 'Media' : 'Baja'}
+                                  </span>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {formData.tiposDatosSeleccionados && formData.tiposDatosSeleccionados.length > 0 && (
+                      <div className="mt-2 p-2 bg-light rounded">
+                        <small>
+                          <strong>Tipos seleccionados:</strong> {formData.tiposDatosSeleccionados.length} tipo(s)
+                        </small>
+                      </div>
+                    )}
+                  </div>
+
                   {/* TAV: Número de titulares afectados y volumen de datos */}
                   <div className="mb-3">
                     <label className="form-label fw-bold">Número de titulares afectados y volumen de datos (TAV)</label>
@@ -479,6 +657,7 @@ const MPRIVCalculator: React.FC = () => {
                                 <input
                                   type="number"
                                   min={0}
+                                  max={TOTAL_TITULARES_EMPRESA}
                                   className="form-control text-end"
                                   style={{ width: '140px' }}
                                   value={formData.titulares[cat.id] ?? ''}
@@ -507,7 +686,45 @@ const MPRIVCalculator: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="form-text mt-1">Total de titulares (fijo): {TOTAL_TITULARES_EMPRESA.toLocaleString('es-EC')}</div>
+                    <div className="form-text mt-1">
+                      Total de titulares (fijo): {TOTAL_TITULARES_EMPRESA.toLocaleString('es-EC')}
+                      {formData.titularesSeleccionados && formData.titularesSeleccionados.length > 0 && (
+                        <div className="mt-2 p-2 bg-light rounded">
+                          <small>
+                            <strong>Clasificación TAV:</strong>
+                            <br />
+                            {(() => {
+                              const totalAfectados = (formData.titularesSeleccionados || []).reduce((sum: number, id: string) => sum + (Number(formData.titulares?.[id]) || 0), 0);
+                              const porcentajeAfectados = TOTAL_TITULARES_EMPRESA > 0 ? (totalAfectados / TOTAL_TITULARES_EMPRESA) * 100 : 0;
+                              
+                              // Verificar si excede el límite
+                              if (totalAfectados > TOTAL_TITULARES_EMPRESA) {
+                                return (
+                                  <span className="text-danger">
+                                    ⚠️ Error: El total de titulares afectados ({totalAfectados.toLocaleString('es-EC')}) excede el total disponible ({TOTAL_TITULARES_EMPRESA.toLocaleString('es-EC')})
+                                  </span>
+                                );
+                              }
+                              
+                              let nivelTAV = '';
+                              if (totalAfectados < 100 || porcentajeAfectados < 0.1) {
+                                nivelTAV = 'Muy bajo';
+                              } else if ((totalAfectados >= 100 && totalAfectados <= 1000) || (porcentajeAfectados >= 0.1 && porcentajeAfectados <= 1)) {
+                                nivelTAV = 'Bajo';
+                              } else if ((totalAfectados >= 1001 && totalAfectados <= 10000) || (porcentajeAfectados >= 1 && porcentajeAfectados <= 10)) {
+                                nivelTAV = 'Medio';
+                              } else if ((totalAfectados >= 10001 && totalAfectados <= 100000) || (porcentajeAfectados >= 10 && porcentajeAfectados <= 50)) {
+                                nivelTAV = 'Alto';
+                              } else {
+                                nivelTAV = 'Muy alto';
+                              }
+                              
+                              return `Nivel: ${nivelTAV} (${totalAfectados.toLocaleString('es-EC')} titulares - ${porcentajeAfectados.toFixed(4)}%)`;
+                            })()}
+                          </small>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {/* TEV: Grupos especialmente vulnerables */}
                   <div className="mb-3">
