@@ -173,28 +173,47 @@ export const impactoDerechosOptions = {
 
 export const intencionalidadOptions = {
   sin_intencion: {
-  name: "Sin Intención (10-30)",
-  value: 20,
-  description: "Error no intencional por desconocimiento",
+  name: "Sin intención",
+  description: "Accidental; con controles básicos.",
   pert: { a: 10, b: 20, c: 30 }
   },
   negligencia_leve: {
-  name: "Negligencia Leve (40-50)",
-  value: 45,
-  description: "Descuido menor en procedimientos",
-  pert: { a: 40, b: 45, c: 50 }
+  name: "Negligencia leve",
+  description: "Descuido puntual; controles vigentes.",
+  pert: { a: 25, b: 40, c: 55 }
   },
   negligencia_grave: {
-  name: "Negligencia Grave (60-70)",
-  value: 65,
-  description: "Descuido grave en obligaciones conocidas",
-  pert: { a: 60, b: 65, c: 70 }
+  name: "Negligencia grave",
+  description: "Deficiencia seria o sin controles.",
+  pert: { a: 50, b: 70, c: 85 }
   },
   intencion_directa: {
-  name: "Intención Directa (80-100)",
-  value: 90,
-  description: "Violación consciente e intencional",
-  pert: { a: 80, b: 90, c: 100 }
+  name: "Intención directa",
+  description: "Decisión consciente de infringir.",
+  pert: { a: 75, b: 90, c: 100 }
+  }
+};
+
+export const naturalezaVulneracionOptions = {
+  solo_disponibilidad: {
+    name: "Solo disponibilidad afectada",
+    description: "Únicamente se ve comprometida la disponibilidad de los datos",
+    pert: { a: 10, b: 15, c: 25 }
+  },
+  integridad_comprometida: {
+    name: "Integridad comprometida",
+    description: "La integridad de los datos se encuentra comprometida",
+    pert: { a: 35, b: 50, c: 65 }
+  },
+  confidencialidad_vulnerada: {
+    name: "Confidencialidad vulnerada",
+    description: "Se ha vulnerado la confidencialidad de los datos personales",
+    pert: { a: 55, b: 70, c: 85 }
+  },
+  multiples_aspectos: {
+    name: "Múltiples aspectos afectados",
+    description: "Múltiples aspectos de seguridad se encuentran comprometidos",
+    pert: { a: 70, b: 85, c: 100 }
   }
 };
 

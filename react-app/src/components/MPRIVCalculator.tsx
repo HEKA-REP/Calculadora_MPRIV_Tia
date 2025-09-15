@@ -4,7 +4,8 @@ import { Bar } from 'react-chartjs-2';
 import { 
   activities, 
   areas, 
-  intencionalidadOptions, 
+  intencionalidadOptions,
+  naturalezaVulneracionOptions,
   VDN,
   titularCategories,
   vulnerableGroups,
@@ -27,6 +28,8 @@ interface FormData {
   gruposVulnerables: string[]; // ids de grupos seleccionados
   // TDP - Tipos de datos personales
   tiposDatosSeleccionados: string[]; // ids de tipos de datos seleccionados
+  // Naturaleza de la vulneración
+  naturalezaVulneracion: string;
   // Otros factores
   intencionalidad: string;
 }
@@ -52,6 +55,7 @@ const MPRIVCalculator: React.FC = () => {
     tieneVulnerables: false,
     gruposVulnerables: [],
     tiposDatosSeleccionados: [],
+    naturalezaVulneracion: '',
     intencionalidad: '',
   });
 
@@ -59,7 +63,8 @@ const MPRIVCalculator: React.FC = () => {
   const [activityDescription, setActivityDescription] = useState<string>('');
   const [showActivityDescription, setShowActivityDescription] = useState(false);
   const [descriptions, setDescriptions] = useState({
-    intencionalidad: ''
+    intencionalidad: '',
+    naturalezaVulneracion: ''
   });
 
   // Estado para simulación Monte Carlo
@@ -77,9 +82,9 @@ const MPRIVCalculator: React.FC = () => {
   };
 
   const calculateMPRIV = (data: FormData): CalculationResults | null => {
-    const { area, activity, intencionalidad } = data;
+    const { area, activity, intencionalidad, naturalezaVulneracion } = data;
     
-    if (!area || !activity || !intencionalidad) {
+    if (!area || !activity || !intencionalidad || !naturalezaVulneracion) {
       return null;
     }
 
@@ -160,11 +165,9 @@ const MPRIVCalculator: React.FC = () => {
     const TAV_expected = pert(tavParams.a * 100, tavParams.b * 100, tavParams.c * 100); // Convertir a escala 0-100
     const TAV_weighted = (TAV_expected / 100) * WEIGHTS.TAV; // 0-0.2
 
-    // 3) NDV (interno por severidad)
-    const ndvPert = activityData.severity === 'grave'
-      ? { a: 50, b: 70, c: 90 }
-      : { a: 20, b: 40, c: 60 };
-    const NDV_expected = pert(ndvPert.a, ndvPert.b, ndvPert.c);
+    // 3) NDV (usando selección del usuario)
+    const ndvOpt = naturalezaVulneracionOptions[naturalezaVulneracion as keyof typeof naturalezaVulneracionOptions] as any;
+    const NDV_expected = ndvOpt?.pert ? pert(ndvOpt.pert.a, ndvOpt.pert.b, ndvOpt.pert.c) : 0;
     const NDV_weighted = (NDV_expected / 100) * WEIGHTS.NDV; // 0-0.2
 
     // 4) TEV (si hay grupos vulnerables). Tomamos b=85, a=70, c=100 como base; escalamos b con cantidad de grupos
@@ -308,13 +311,44 @@ const MPRIVCalculator: React.FC = () => {
     setDownloading(true);
     const { histUrl } = getChartDataUrls();
     
+    // Construir resumen para PDF
+    const activityData = formData.area && formData.activity ? (activities[formData.area]?.[formData.activity] as Activity) : null;
+    const tiposSeleccionadosNombres = (formData.tiposDatosSeleccionados || []).map(id => {
+      const t = tiposDatosPersonales.find(tp => tp.id === id);
+      return t ? t.label.split('(')[0].trim() : '';
+    }).filter(Boolean).join(', ');
+    const totalAfectados = (formData.titularesSeleccionados || []).reduce((sum: number, id: string) => sum + (Number(formData.titulares?.[id]) || 0), 0);
+    const gruposVulnText = formData.gruposVulnerables.length > 0 ? 'SI (' + formData.gruposVulnerables.map(id => {
+      const g = vulnerableGroups.find(v => v.id === id);
+      return g ? g.label.split('(')[0].trim() : '';
+    }).filter(Boolean).join(', ') + ')' : 'NO';
+    const intLabel = formData.intencionalidad ? intencionalidadOptions[formData.intencionalidad as keyof typeof intencionalidadOptions].name : '';
+    const ndvLabel = formData.naturalezaVulneracion ? naturalezaVulneracionOptions[formData.naturalezaVulneracion as keyof typeof naturalezaVulneracionOptions].name : '';
+
+    const pdfSummary = {
+      area: formData.area ? areas[formData.area as keyof typeof areas] : '',
+      actividad: activityData?.name || '',
+      riesgo: activityData?.description || '',
+      categoriaInfraccion: activityData ? (activityData.severity === 'grave' ? 'Grave (0.7% al 1.0%)' : 'Leve (0.1% al 0.7%)') : '',
+      titularesAfectados: totalAfectados,
+      tiposDatos: tiposSeleccionadosNombres,
+      gruposVulnerables: gruposVulnText,
+      naturalezaVulneracion: ndvLabel,
+      intencionalidad: intLabel,
+      multaEstimacion: results.multaFinal
+    };
+
+    const narrative = `Dentro de la simulación, la empresa expone NO aplicar medidas administrativas adicionales respecto a la actividad evaluada. La multa estimada resultante se basa en los parámetros seleccionados y la distribución de escenarios generada.`;
+
     const payload = {
       company: 'Almacenes Tía',
       multa: results.multaFinal,
       severity: results.severity,
       histChartDataUrl: histUrl || null,
       monteCarloStats: simStats || null,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      summary: pdfSummary,
+      narrative
     };
     try {
       const endpoint = buildApiUrl('/api/report/pdf');
@@ -445,6 +479,15 @@ const MPRIVCalculator: React.FC = () => {
     if (intencionalidad && intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions]) {
       const option = intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions];
       setDescriptions(prev => ({ ...prev, intencionalidad: option.description }));
+    }
+  };
+
+  const handleNaturalezaVulneracionChange = (naturalezaVulneracion: string) => {
+    setFormData(prev => ({ ...prev, naturalezaVulneracion }));
+    
+    if (naturalezaVulneracion && naturalezaVulneracionOptions[naturalezaVulneracion as keyof typeof naturalezaVulneracionOptions]) {
+      const option = naturalezaVulneracionOptions[naturalezaVulneracion as keyof typeof naturalezaVulneracionOptions];
+      setDescriptions(prev => ({ ...prev, naturalezaVulneracion: option.description }));
     }
   };
 
@@ -665,10 +708,49 @@ const MPRIVCalculator: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 2.3 TEV */}
+                {/* 2.3 NDV */}
                 <div className="subsection mb-3">
                   <div className="d-flex align-items-center mb-2">
                     <span className="subsection-bullet me-2">2.3</span>
+                    <label className="form-label fw-semibold mb-0">Naturaleza de la vulneración (NDV)</label>
+                  </div>
+                  <select
+                    className={`form-select mb-3 ${!formData.naturalezaVulneracion ? 'text-muted' : ''}`}
+                    id="naturalezaVulneracion"
+                    value={formData.naturalezaVulneracion}
+                    onChange={(e) => handleNaturalezaVulneracionChange(e.target.value)}
+                    required
+                  >
+                    <option value="" disabled hidden>Seleccione la naturaleza de la vulneración</option>
+                    {Object.entries(naturalezaVulneracionOptions).map(([key, option]) => (
+                      <option key={key} value={key}>{option.name}</option>
+                    ))}
+                  </select>
+                  {descriptions.naturalezaVulneracion && (
+                    <div className="mt-2">
+                      {(() => {
+                        const key = formData.naturalezaVulneracion as keyof typeof naturalezaVulneracionOptions;
+                        // Colores según gravedad del NDV
+                        const alertClass =
+                          key === 'solo_disponibilidad' ? 'alert-success border-success' :
+                          key === 'integridad_comprometida' ? 'alert-info border-info' :
+                          key === 'confidencialidad_vulnerada' ? 'alert-warning border-warning' :
+                          key === 'multiples_aspectos' ? 'alert-danger border-danger' :
+                          'alert-dark border-dark';
+                        return (
+                          <div className={`alert ${alertClass} border-start border-5`}>
+                            <div className="small"><strong>Descripción:</strong> {descriptions.naturalezaVulneracion}</div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2.4 TEV */}
+                <div className="subsection mb-3">
+                  <div className="d-flex align-items-center mb-2">
+                    <span className="subsection-bullet me-2">2.4</span>
                     <label className="form-label fw-semibold mb-0">Grupos de titulares especialmente vulnerables (TEV)</label>
                   </div>
                   <div className="form-check form-switch mb-2">
@@ -700,6 +782,8 @@ const MPRIVCalculator: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Eliminar la sección NDV duplicada que estaba aquí */}
               </div>
 
               {/* Paso 3: INT */}
