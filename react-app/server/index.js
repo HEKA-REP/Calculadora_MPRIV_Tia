@@ -267,7 +267,7 @@ app.post('/api/report/pdf', async (req, res) => {
     const mes = (fechaActual.getMonth() + 1).toString().padStart(2, '0');
     const año = fechaActual.getFullYear();
     const fechaFormateada = `${dia}-${mes}-${año}`;
-    const nombreArchivo = `Informe_Simulacion_Multa_${fechaFormateada}.pdf`;
+    const nombreArchivo = `Reporte_Multa_MPRIV_${fechaFormateada}.pdf`;
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);

@@ -364,7 +364,17 @@ const MPRIVCalculator: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'reporte_mpriv.pdf';
+      // Intentar obtener el nombre de archivo desde el header Content-Disposition del backend
+      let suggestedName = 'reporte_mpriv.pdf';
+      const disposition = resp.headers.get('Content-Disposition');
+      if (disposition) {
+        // Soporta formatos: attachment; filename="Reporte_Multa_MPRIV_15-09-2025.pdf"
+        const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(disposition);
+        if (match) {
+          suggestedName = decodeURIComponent((match[1] || match[2] || '').trim());
+        }
+      }
+      a.download = suggestedName;
       document.body.appendChild(a);
       a.click();
       a.remove();
