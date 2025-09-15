@@ -11,7 +11,6 @@ import {
   vulnerableGroups,
   tiposDatosPersonales,
   WEIGHTS,
-  IED_NORMALIZATION,
   RER_FIXED,
   TOTAL_TITULARES_EMPRESA,
   SDI_WEIGHTS,
@@ -60,12 +59,6 @@ const MPRIVCalculator: React.FC = () => {
   });
 
   const [results, setResults] = useState<CalculationResults | null>(null);
-  const [activityDescription, setActivityDescription] = useState<string>('');
-  const [showActivityDescription, setShowActivityDescription] = useState(false);
-  const [descriptions, setDescriptions] = useState({
-    intencionalidad: '',
-    naturalezaVulneracion: ''
-  });
 
   // Estado para simulación Monte Carlo
   type SimulationStats = { min: number; avg: number; median: number; max: number };
@@ -170,7 +163,7 @@ const MPRIVCalculator: React.FC = () => {
     const NDV_expected = ndvOpt?.pert ? pert(ndvOpt.pert.a, ndvOpt.pert.b, ndvOpt.pert.c) : 0;
     const NDV_weighted = (NDV_expected / 100) * WEIGHTS.NDV; // 0-0.2
 
-    // 4) TEV (si hay grupos vulnerables). Tomamos b=85, a=70, c=100 como base; escalamos b con cantidad de grupos
+    // 4) TEV (si hay grupos vulnerables). Tomamos b=85, a=70, c=100 como base
     let TEV_weighted = 0;
     if (data.gruposVulnerables && data.gruposVulnerables.length > 0) {
       const count = data.gruposVulnerables.length;
@@ -182,28 +175,31 @@ const MPRIVCalculator: React.FC = () => {
     }
 
     const IED_sum = TDP_weighted + TAV_weighted + NDV_weighted + TEV_weighted; // 0-1
-  const IED = IED_sum * IED_NORMALIZATION; // normalización 0.6 
+  const IED = IED_sum; 
   // INT ahora en 0-100 por PERT; fallback a value si no hay pert
   const intOpt = intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions] as any;
   const INT_percent = intOpt?.pert ? pert(intOpt.pert.a, intOpt.pert.b, intOpt.pert.c) : (intOpt?.value || 0);
   const RER = RER_FIXED;
 
-    // SDI con pesos: convertir a puntos 0-10 antes de mezclar
-    const IED_points = IED * 10;           // IED 0-1 -> 0-10
-    const INT_points = INT_percent / 10;   // INT 0-100 -> 0-10
-    const RER_points = RER;                // mantener escala usada previamente (0-10 si se parametriza)
+    // SDI con pesos: trabajar en escala normalizada 0-1 
+    const IED_normalized = IED;                    // IED ya está en 0-1
+    const INT_normalized = INT_percent / 100;      // INT 0-100 -> 0-1
+    const RER_normalized = RER / 100;              // RER a 0-1 (actualmente es 0)
+    
+    // SDI = 2 * (componentes ponderados en escala 0-1)
     const SDI = 2 * (
-      SDI_WEIGHTS.IED * IED_points +
-      SDI_WEIGHTS.INT * INT_points +
-      SDI_WEIGHTS.RER * RER_points
+      SDI_WEIGHTS.IED * IED_normalized +
+      SDI_WEIGHTS.INT * INT_normalized +
+      SDI_WEIGHTS.RER * RER_normalized
     );
+    
     const multaFinal = CDI * SDI;
 
     return {
       PDI: activityData.pdi,
       CDI,
       IED,
-  INT: INT_points,
+      INT: INT_normalized,
       RER,
       SDI,
       multaFinal,
@@ -238,17 +234,19 @@ const MPRIVCalculator: React.FC = () => {
       const variablePDI = (results.PDI * pdiVariation) / 100; // PDI a decimal con variación
       const simulatedCDI = (VDN * RDM_min) + (variablePDI * (VDN * (RDM_max - RDM_min)));
       
-      // Recalcular SDI con variabilidad (usar mismo esquema de puntos/pesos)
-      const iedPointsVar = iedVar * 10;      // IED 0-1 -> 0-10
-      const intPointsVar = intVar;           // INT ya almacenado en puntos 0-10
-      const rerPointsVar = rerVar;           // RER puntos
+      // Recalcular SDI con variabilidad (usar escala normalizada 0-1)
+      const iedNormalizedVar = iedVar;           // IED ya está en 0-1
+      const intNormalizedVar = intVar;           // INT ya está normalizado 0-1
+      const rerNormalizedVar = rerVar / 100;     // RER a escala 0-1
+      
+      // Fórmula correcta del PDF: SDI = 2 * (componentes ponderados en escala 0-1)
       const simulatedSDI = 2 * (
-        SDI_WEIGHTS.IED * iedPointsVar +
-        SDI_WEIGHTS.INT * intPointsVar +
-        SDI_WEIGHTS.RER * rerPointsVar
+        SDI_WEIGHTS.IED * iedNormalizedVar +
+        SDI_WEIGHTS.INT * intNormalizedVar +
+        SDI_WEIGHTS.RER * rerNormalizedVar
       );
 
-      // Multa final - exacto del documento
+      // Multa final
       const finalFine = Math.max(0, simulatedCDI * simulatedSDI);
 
       simulationResults.push({
@@ -393,19 +391,10 @@ const MPRIVCalculator: React.FC = () => {
 
   const handleAreaChange = (area: string) => {
     setFormData(prev => ({ ...prev, area, activity: '' }));
-    setShowActivityDescription(false);
   };
 
   const handleActivityChange = (activity: string) => {
     setFormData(prev => ({ ...prev, activity }));
-    
-    if (formData.area && activity) {
-      const activityData = activities[formData.area]?.[activity] as Activity;
-      if (activityData) {
-        setActivityDescription(activityData.description);
-        setShowActivityDescription(true);
-      }
-    }
   };
 
   // Handlers para TAV/TEV
@@ -475,20 +464,10 @@ const MPRIVCalculator: React.FC = () => {
 
   const handleIntencionalidadChange = (intencionalidad: string) => {
     setFormData(prev => ({ ...prev, intencionalidad }));
-    
-    if (intencionalidad && intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions]) {
-      const option = intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions];
-      setDescriptions(prev => ({ ...prev, intencionalidad: option.description }));
-    }
   };
 
   const handleNaturalezaVulneracionChange = (naturalezaVulneracion: string) => {
     setFormData(prev => ({ ...prev, naturalezaVulneracion }));
-    
-    if (naturalezaVulneracion && naturalezaVulneracionOptions[naturalezaVulneracion as keyof typeof naturalezaVulneracionOptions]) {
-      const option = naturalezaVulneracionOptions[naturalezaVulneracion as keyof typeof naturalezaVulneracionOptions];
-      setDescriptions(prev => ({ ...prev, naturalezaVulneracion: option.description }));
-    }
   };
 
   return (
@@ -496,7 +475,7 @@ const MPRIVCalculator: React.FC = () => {
       {/* Sección superior: Configuración del Cálculo */}
       <div className="mb-4">
         <div className="card">
-          <div className="card-header bg-primary text-white">
+          <div className="card-header text-white" style={{background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'}}>
             <h3 className="card-title mb-0">
               <i className="bi bi-sliders me-2"></i>
               Configuración del Cálculo
@@ -543,20 +522,6 @@ const MPRIVCalculator: React.FC = () => {
                     </select>
                   </div>
                 </div>
-                {showActivityDescription && formData.area && formData.activity && (
-                  <div className="mt-3">
-                    <div className={`alert ${(activities[formData.area]?.[formData.activity] as Activity)?.severity === 'grave' ? 'alert-danger border-danger' : 'alert-warning border-warning'} border-start border-5`}>                      
-                      <div className="d-flex align-items-center justify-content-start gap-2 mb-2">
-                        <span className={`badge ${(activities[formData.area]?.[formData.activity] as Activity)?.severity === 'grave' ? 'bg-danger' : 'bg-warning text-dark'} fw-bold`}>
-                          INFRACCIÓN {(activities[formData.area]?.[formData.activity] as Activity)?.severity.toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="small">
-                        <strong>Descripción:</strong> {activityDescription}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Paso 2: IED */}
@@ -576,9 +541,6 @@ const MPRIVCalculator: React.FC = () => {
                   <div className="row g-3">
                     {tiposDatosPersonales.map(tipo => {
                       const checked = (formData.tiposDatosSeleccionados || []).includes(tipo.id);
-                      const sensibilidadColor = tipo.sensibilidad === 'muy_alta' ? 'danger' :
-                                               tipo.sensibilidad === 'alta' ? 'warning' :
-                                               tipo.sensibilidad === 'media' ? 'info' : 'secondary';
                       const tileClass = `tdp-tile border rounded p-2 h-100 d-flex align-items-center ${checked ? 'tdp-tile-selected' : ''}`;
                       return (
                         <div className="col-sm-6 col-lg-4" key={tipo.id}>
@@ -593,23 +555,11 @@ const MPRIVCalculator: React.FC = () => {
                             <div className="flex-grow-1 me-2">
                               <small>{tipo.label}</small>
                             </div>
-                            <span className={`badge bg-${sensibilidadColor} flex-shrink-0`} style={{fontSize: '0.65rem'}}>
-                              {tipo.sensibilidad === 'muy_alta' ? 'Muy Alta' :
-                               tipo.sensibilidad === 'alta' ? 'Alta' :
-                               tipo.sensibilidad === 'media' ? 'Media' : 'Baja'}
-                            </span>
                           </label>
                         </div>
                       );
                     })}
                   </div>
-                  {formData.tiposDatosSeleccionados && formData.tiposDatosSeleccionados.length > 0 && (
-                    <div className="mt-2 p-2 bg-light rounded">
-                      <small>
-                        <strong>Tipos seleccionados:</strong> {formData.tiposDatosSeleccionados.length} tipo(s)
-                      </small>
-                    </div>
-                  )}
                 </div>
 
                 {/* 2.2 TAV */}
@@ -726,25 +676,6 @@ const MPRIVCalculator: React.FC = () => {
                       <option key={key} value={key}>{option.name}</option>
                     ))}
                   </select>
-                  {descriptions.naturalezaVulneracion && (
-                    <div className="mt-2">
-                      {(() => {
-                        const key = formData.naturalezaVulneracion as keyof typeof naturalezaVulneracionOptions;
-                        // Colores según gravedad del NDV
-                        const alertClass =
-                          key === 'solo_disponibilidad' ? 'alert-success border-success' :
-                          key === 'integridad_comprometida' ? 'alert-info border-info' :
-                          key === 'confidencialidad_vulnerada' ? 'alert-warning border-warning' :
-                          key === 'multiples_aspectos' ? 'alert-danger border-danger' :
-                          'alert-dark border-dark';
-                        return (
-                          <div className={`alert ${alertClass} border-start border-5`}>
-                            <div className="small"><strong>Descripción:</strong> {descriptions.naturalezaVulneracion}</div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
                 </div>
 
                 {/* 2.4 TEV */}
@@ -782,8 +713,6 @@ const MPRIVCalculator: React.FC = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Eliminar la sección NDV duplicada que estaba aquí */}
               </div>
 
               {/* Paso 3: INT */}
@@ -801,27 +730,9 @@ const MPRIVCalculator: React.FC = () => {
                 >
                   <option value="" disabled hidden>Seleccione la intencionalidad</option>
                   {Object.entries(intencionalidadOptions).map(([key, option]) => (
-                    <option key={key} value={key}>{option.name}</option>
+                    <option key={key} value={key}>{`${option.name} – ${option.description}`}</option>
                   ))}
                 </select>
-                {descriptions.intencionalidad && (
-                  <div className="mt-2">
-                    {(() => {
-                      const key = formData.intencionalidad as keyof typeof intencionalidadOptions;
-                      // Colores según gravedad de la intencionalidad
-                      const alertClass =
-                        key === 'sin_intencion' ? 'alert-success border-success' :
-                        key === 'negligencia_leve' ? 'alert-warning border-warning' :
-                        key === 'negligencia_grave' ? 'alert-danger border-danger' :
-                        'alert-dark border-dark'; // intencion_directa diferenciado de "grave"
-                      return (
-                        <div className={`alert ${alertClass} border-start border-5`}>
-                          <div className="small"><strong>Descripción:</strong> {descriptions.intencionalidad}</div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
               </div>
 
               {/* Acción */}
@@ -839,7 +750,7 @@ const MPRIVCalculator: React.FC = () => {
       {/* Sección inferior: Resultados del Cálculo */}
       <div className="mb-4">
         <div className="card">
-          <div className="card-header bg-success text-white">
+          <div className="card-header text-white" style={{background: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)'}}>
             <h3 className="card-title mb-0">
               <i className="bi bi-graph-up me-2"></i>
               Resultados del Cálculo
@@ -864,9 +775,11 @@ const MPRIVCalculator: React.FC = () => {
                       </div>
                     </div>
                     <div className="col-md-6">
-                      <div className="card result-card border-info">
-                        <div className="card-body text-center">
-                          <div className="display-6 fw-bold text-info">{results.severity.toUpperCase()}</div>
+                      <div className="card result-card border-primary h-100">
+                        <div className="card-body text-center d-flex flex-column justify-content-center">
+                          <div className="display-6 fw-bold" style={{color: results.severity === 'grave' ? '#dc2626' : '#f59e0b'}}>
+                            {results.severity.toUpperCase()}
+                          </div>
                           <div className="text-muted">Tipo de Infracción</div>
                         </div>
                       </div>
@@ -877,7 +790,7 @@ const MPRIVCalculator: React.FC = () => {
                   <div className="row mt-4">
                     <div className="col-12">
                       <div className="card">
-                        <div className="card-header bg-info text-white">
+                        <div className="card-header text-white" style={{background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'}}>
                           <h5 className="card-title mb-0">
                             <i className="bi bi-bar-chart-line me-2"></i>
                             Simulación Monte Carlo
@@ -888,35 +801,27 @@ const MPRIVCalculator: React.FC = () => {
                           
                           {simStats && (
                             <div className="row mb-4">
-                              <div className="col-md-3 text-center">
-                                <div className="card border-success h-100">
+                              <div className="col-md-4 text-center">
+                                <div className="card h-100" style={{borderColor: '#22c55e', borderWidth: '2px'}}>
                                   <div className="card-body">
-                                    <div className="fw-bold text-success">Optimista</div>
-                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2' }}>{formatCurrency(simStats.min)}</div>
+                                    <div className="fw-bold" style={{color: '#22c55e'}}>Valor Mínimo</div>
+                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2', color: '#22c55e' }}>{formatCurrency(simStats.min)}</div>
                                   </div>
                                 </div>
                               </div>
-                              <div className="col-md-3 text-center">
-                                <div className="card border-primary h-100">
+                              <div className="col-md-4 text-center">
+                                <div className="card h-100" style={{borderColor: '#f59e0b', borderWidth: '2px'}}>
                                   <div className="card-body">
-                                    <div className="fw-bold text-primary">Promedio</div>
-                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2' }}>{formatCurrency(simStats.avg)}</div>
+                                    <div className="fw-bold" style={{color: '#f59e0b'}}>Valor Más Probable</div>
+                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2', color: '#f59e0b' }}>{formatCurrency(simStats.median)}</div>
                                   </div>
                                 </div>
                               </div>
-                              <div className="col-md-3 text-center">
-                                <div className="card border-info h-100">
+                              <div className="col-md-4 text-center">
+                                <div className="card h-100" style={{borderColor: '#dc2626', borderWidth: '2px'}}>
                                   <div className="card-body">
-                                    <div className="fw-bold text-info">Mediana</div>
-                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2' }}>{formatCurrency(simStats.median)}</div>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="col-md-3 text-center">
-                                <div className="card border-danger h-100">
-                                  <div className="card-body">
-                                    <div className="fw-bold text-danger">Pesimista</div>
-                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2' }}>{formatCurrency(simStats.max)}</div>
+                                    <div className="fw-bold" style={{color: '#dc2626'}}>Valor Máximo</div>
+                                    <div className="h6 mb-0 fw-bold" style={{ fontSize: '0.85rem', lineHeight: '1.2', color: '#dc2626' }}>{formatCurrency(simStats.max)}</div>
                                   </div>
                                 </div>
                               </div>
@@ -952,8 +857,8 @@ const MPRIVCalculator: React.FC = () => {
                                       {
                                         label: 'Frecuencia',
                                         data: histSeries.counts,
-                                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                                        borderColor: 'rgba(75, 192, 192, 1)',
+                                        backgroundColor: 'rgba(220, 38, 38, 0.6)',
+                                        borderColor: 'rgba(220, 38, 38, 1)',
                                         borderWidth: 1
                                       }
                                     ]
@@ -964,7 +869,7 @@ const MPRIVCalculator: React.FC = () => {
                                       legend: { display: false },
                                       title: { 
                                         display: true, 
-                                        text: 'Distribución de Frecuencias - Simulación Monte Carlo (1,000 iteraciones)',
+                                        text: 'Distribución de Multas - Simulación Monte Carlo (1,000 iteraciones)',
                                         font: { size: 14, weight: 'bold' }
                                       }
                                     },

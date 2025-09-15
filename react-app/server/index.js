@@ -38,20 +38,16 @@ app.post('/api/report/pdf', async (req, res) => {
     // Bloque estadísticas Monte Carlo
     const monteCarloStatsHtml = monteCarloStats ? `
       <div class="stats-grid">
-        <div class="stat-card stat-optimista">
-          <div class="stat-label">Optimista</div>
+        <div class="stat-card stat-minimo">
+          <div class="stat-label">Valor Mínimo</div>
           <div class="stat-value">${formatCurrency(monteCarloStats.min)}</div>
         </div>
-        <div class="stat-card stat-promedio">
-          <div class="stat-label">Promedio</div>
-          <div class="stat-value">${formatCurrency(monteCarloStats.avg)}</div>
-        </div>
-        <div class="stat-card stat-mediana">
-          <div class="stat-label">Mediana</div>
+        <div class="stat-card stat-probable">
+          <div class="stat-label">Valor Más Probable</div>
           <div class="stat-value">${formatCurrency(monteCarloStats.median)}</div>
         </div>
-        <div class="stat-card stat-pesimista">
-          <div class="stat-label">Pesimista</div>
+        <div class="stat-card stat-maximo">
+          <div class="stat-label">Valor Máximo</div>
           <div class="stat-value">${formatCurrency(monteCarloStats.max)}</div>
         </div>
       </div>` : '';
@@ -167,7 +163,7 @@ app.post('/api/report/pdf', async (req, res) => {
       color: #E4002B;
       text-shadow: 0 1px 2px rgba(228, 0, 43, 0.1);
     }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 16px 0; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 16px 0; }
     .stat-card { 
       border: 2px solid #e8d5d5; 
       border-radius: 10px; 
@@ -176,15 +172,13 @@ app.post('/api/report/pdf', async (req, res) => {
       background: white;
       transition: all 0.3s ease;
     }
-    .stat-optimista { border-color: #228B22; background: linear-gradient(135deg, #f0fff0 0%, #e6ffe6 100%); }
-    .stat-promedio { border-color: #4169E1; background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%); }
-    .stat-mediana { border-color: #20B2AA; background: linear-gradient(135deg, #f0ffff 0%, #e6fffe 100%); }
-    .stat-pesimista { border-color: #E4002B; background: linear-gradient(135deg, #fff0f0 0%, #ffe6e6 100%); }
+    .stat-minimo { border-color: #22c55e; background: linear-gradient(135deg, #f0fff0 0%, #e6ffe6 100%); }
+    .stat-probable { border-color: #f59e0b; background: linear-gradient(135deg, #fffbf0 0%, #fef3e6 100%); }
+    .stat-maximo { border-color: #dc2626; background: linear-gradient(135deg, #fff0f0 0%, #ffe6e6 100%); }
     .stat-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-optimista .stat-label { color: #228B22; }
-    .stat-promedio .stat-label { color: #4169E1; }
-    .stat-mediana .stat-label { color: #20B2AA; }
-    .stat-pesimista .stat-label { color: #E4002B; }
+    .stat-minimo .stat-label { color: #22c55e; }
+    .stat-probable .stat-label { color: #f59e0b; }
+    .stat-maximo .stat-label { color: #dc2626; }
     .stat-value { font-size: 18px; font-weight: 700; }
     .narrativa { 
       background: linear-gradient(135deg, #fff5f5 0%, #ffeaea 100%); 

@@ -1,5 +1,5 @@
 body {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, #fef7f7 0%, #fce8e8 100%);
   min-height: 100vh;
 }
 
@@ -13,7 +13,7 @@ body {
 }
 
 .gradient-header {
-  background: linear-gradient(135deg, #007bff, #6610f2);
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
   color: white;
 }
 
@@ -27,8 +27,8 @@ body {
 
 .formula-step {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
-  background-color: #f8f9fa;
-  border-left: 4px solid #007bff;
+  background-color: #fef2f2;
+  border-left: 4px solid #dc2626;
   padding: 10px;
   margin: 5px 0;
 }
@@ -83,8 +83,8 @@ body {
 }
 
 .footer-dark {
-  background-color: #222222; /* as requested */
-  padding: 10px 0; /* a bit taller/wider feel */
+  background-color: #222222; 
+  padding: 10px 0;
   border-top: 1px solid #2c2c2c;
 }
 
@@ -120,13 +120,14 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #0d6efd; /* bootstrap primary */
+  background: linear-gradient(135deg, #dc2626, #ef4444);
   color: #fff;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
 }
 
 .subsection-bullet {
@@ -136,15 +137,142 @@ body {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #e9ecef;
-  color: #0d6efd;
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  color: #dc2626;
   font-weight: 700;
   font-size: 0.8rem;
+  border: 2px solid #dc2626;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .section {
-  /* subtle separation */
-  padding-top: 4px;
+  background: linear-gradient(135deg, #ffffff 0%, #fefbfb 100%);
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
+  position: relative;
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  border-radius: 12px 0 0 12px;
+}
+
+.section:hover {
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.12);
+  transform: translateY(-1px);
+  transition: all 0.3s ease;
+}
+
+.section-title {
+  border-bottom: 2px solid #fecaca;
+  padding-bottom: 12px;
+  margin-bottom: 20px !important;
+}
+
+.section-title h4 {
+  margin: 0;
+  color: #7f1d1d;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.subsection {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #fef2f2;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.subsection::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #dc2626;
+  border-radius: 8px 0 0 8px;
+  opacity: 0.4;
+}
+
+/* Colores temáticos para cada sección principal */
+.section:nth-child(1) {
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  border-color: #f87171;
+}
+
+.section:nth-child(1)::before {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+.section:nth-child(2) {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+  border-color: #fb7185;
+}
+
+.section:nth-child(2)::before {
+  background: linear-gradient(135deg, #e11d48, #f43f5e);
+}
+
+.section:nth-child(3) {
+  background: linear-gradient(135deg, #fef7f7 0%, #fce8e8 100%);
+  border-color: #fca5a5;
+}
+
+.section:nth-child(3)::before {
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+}
+
+/* Estilo especial para la card de resultado */
+.result-card {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+  border: 2px solid #dc2626;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25);
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.result-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(220, 38, 38, 0.3);
+}
+
+.result-card h5, .result-card .display-4 {
+  color: white !important;
+}
+
+/* Mejorar contraste en alertas */
+.alert {
+  border-radius: 8px;
+  border-width: 2px;
+  font-size: 0.9rem;
+}
+
+.form-select, .form-control {
+  border-radius: 8px;
+  border: 2px solid #fecaca;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-select:focus, .form-control:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  outline: none;
 }
 
 /* --- TDP selectable tiles --- */
@@ -155,13 +283,263 @@ body {
   transition: box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 .tdp-tile:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  border-color: #b6d4fe; /* primary-200 */
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.12);
+  border-color: #f87171;
 }
 .tdp-tile input[type="checkbox"] {
   margin-top: 2px;
 }
 .tdp-tile-selected {
-  border-color: #0d6efd !important;
-  background: #f8fbff;
+  border-color: #dc2626 !important;
+  background: #fef2f2;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+.btn-outline-primary {
+  color: #dc2626;
+  border: 2px solid #dc2626;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Checkbox y switches */
+.form-check-input:checked {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  box-shadow: none !important;
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25) !important;
+  border-color: #dc2626 !important;
+}
+
+.form-check-input:hover {
+  border-color: #dc2626;
+}
+
+.form-check-input {
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.form-check-input:indeterminate {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+/* Enlaces y textos destacados */
+a {
+  color: #dc2626;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #b91c1c;
+  text-decoration: underline;
+}
+
+/* Badges y etiquetas */
+.badge {
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.bg-primary {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+}
+
+.text-primary {
+  color: #dc2626 !important;
+}
+
+/* Progreso y barras */
+.progress-bar {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+/* Sobrescribir colores de Bootstrap para usar otras paleta */
+.border-primary {
+  border-color: #dc2626 !important;
+}
+
+.text-primary {
+  color: #dc2626 !important;
+}
+
+.bg-primary {
+  background-color: #dc2626 !important;
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+}
+
+/* Sobrescribir colores específicos de Bootstrap */
+.text-info {
+  color: #06b6d4 !important;
+}
+
+.text-success {
+  color: #22c55e !important;
+}
+
+.text-danger {
+  color: #e11d48 !important;
+}
+
+/* Asegurar que el resultado principal use el rojo */
+.result-card .display-6.text-primary {
+  color: #dc2626 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Cards de resultado personalizadas */
+.result-card.border-primary {
+  border-color: #dc2626 !important;
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%) !important;
+}
+
+.result-card.border-primary:hover {
+  border-color: #b91c1c !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15) !important;
+}
+
+/* Cards de estadísticas Monte Carlo */
+.card.border-primary {
+  border-color: #dc2626 !important;
+  transition: all 0.3s ease;
+}
+
+.card.border-primary:hover {
+  border-color: #b91c1c !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+}
+
+/* Iconos y elementos destacados */
+.bi {
+  color: inherit;
+}
+
+/* Headers de cards personalizados */
+.card-header {
+  font-weight: 600;
+  border-bottom: none;
+}
+
+/* Botones danger alineados con la paleta */
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  border-color: #dc2626 !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b) !important;
+  border-color: #b91c1c !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+/* Spinner personalizado */
+.spinner-border {
+  color: currentColor;
+}
+
+/* Mejorar legibilidad en cards de resultado */
+.result-card .display-6 {
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Botones adicionales - azules convertidos a rojos */
+.btn-outline-info, .btn-info {
+  color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  background-color: transparent;
+}
+
+.btn-outline-info:hover, .btn-info:hover {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: white !important;
+}
+
+.btn-outline-info:focus, .btn-info:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25) !important;
+}
+
+/* Sobrescribir todos los botones azules */
+.btn-primary:not(.btn-outline-primary) {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  border: none !important;
+  color: white !important;
+}
+
+/* Botones con colores Bootstrap que deben ser rojos */
+.btn[class*="btn-"]:not(.btn-danger):not(.btn-success):not(.btn-warning):not(.btn-secondary):not(.btn-dark):not(.btn-light) {
+  background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+  border-color: #dc2626 !important;
+  color: white !important;
+}
+
+/* Específico para botones outline que no sean danger */
+.btn-outline[class*="btn-outline-"]:not(.btn-outline-danger):not(.btn-outline-success):not(.btn-outline-warning) {
+  color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  background-color: transparent !important;
+}
+
+.btn-outline[class*="btn-outline-"]:not(.btn-outline-danger):not(.btn-outline-success):not(.btn-outline-warning):hover {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: white !important;
+}
+
+/* Botón outline-primary específico */
+.btn-outline-primary {
+  color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  background-color: transparent !important;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.25) !important;
+}
+
+/* Asegurar que los radio buttons también usen la paleta rojiza */
+.form-check-input[type="radio"]:checked {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+.form-check-input[type="radio"]:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25) !important;
+  border-color: #dc2626 !important;
 }
