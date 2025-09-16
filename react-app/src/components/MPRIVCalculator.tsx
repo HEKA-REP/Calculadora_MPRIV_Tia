@@ -13,7 +13,7 @@ import {
   WEIGHTS,
   RER_FIXED,
   TOTAL_TITULARES_EMPRESA,
-  SDI_WEIGHTS,
+  IED_NORMALIZATION,
   type Activity
 } from '../data/mprivData';
 
@@ -40,7 +40,10 @@ interface CalculationResults {
   INT: number;
   RER: number;
   SDI: number;
-  multaFinal: number;
+  multaFinal: number; // Valor final tras tope legal
+  multaRaw: number;   // Valor antes de aplicar tope
+  topeLegal: number;  // 1% del VDN
+  aplicoTope: boolean; // true si multaRaw > topeLegal
   severity: string;
   activityName: string;
 }
@@ -175,25 +178,26 @@ const MPRIVCalculator: React.FC = () => {
     }
 
     const IED_sum = TDP_weighted + TAV_weighted + NDV_weighted + TEV_weighted; // 0-1
-  const IED = IED_sum; 
-  // INT ahora en 0-100 por PERT; fallback a value si no hay pert
-  const intOpt = intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions] as any;
-  const INT_percent = intOpt?.pert ? pert(intOpt.pert.a, intOpt.pert.b, intOpt.pert.c) : (intOpt?.value || 0);
-  const RER = RER_FIXED;
-
-    // SDI con pesos: trabajar en escala normalizada 0-1 
-    const IED_normalized = IED;                    // IED ya está en 0-1
-    const INT_normalized = INT_percent / 100;      // INT 0-100 -> 0-1
-    const RER_normalized = RER / 100;              // RER a 0-1 (actualmente es 0)
+    // Aplicar normalización oficial del 60% al IED
+    const IED = IED_sum * IED_NORMALIZATION; // 0.6 factor según metodología oficial
     
-    // SDI = 2 * (componentes ponderados en escala 0-1)
-    const SDI = 2 * (
-      SDI_WEIGHTS.IED * IED_normalized +
-      SDI_WEIGHTS.INT * INT_normalized +
-      SDI_WEIGHTS.RER * RER_normalized
-    );
+    // INT ahora en 0-100 por PERT; fallback a value si no hay pert
+    const intOpt = intencionalidadOptions[intencionalidad as keyof typeof intencionalidadOptions] as any;
+    const INT_percent = intOpt?.pert ? pert(intOpt.pert.a, intOpt.pert.b, intOpt.pert.c) : (intOpt?.value || 0);
+    const INT_normalized = (INT_percent / 100) * 0.4; // Aplicar peso 40% del INT
     
-    const multaFinal = CDI * SDI;
+    const RER = RER_FIXED;
+    const RER_normalized = RER; // RER ya viene como 0 (sin reincidencia implementada)
+    
+    // SDI según metodología oficial: SDI = 2(IED + INT + RER)
+    // Cada componente ya viene con su peso aplicado
+    const SDI = 2 * (IED + INT_normalized + RER_normalized);
+    
+  // Cálculo de multa bruta y aplicación de tope legal (1% del VDN)
+  const multaRaw = CDI * SDI;
+  const topeLegal = VDN * 0.01; // 1% del Volumen de Negocio
+  const aplicoTope = multaRaw > topeLegal;
+  const multaFinal = aplicoTope ? topeLegal : multaRaw;
 
     return {
       PDI: activityData.pdi,
@@ -202,7 +206,10 @@ const MPRIVCalculator: React.FC = () => {
       INT: INT_normalized,
       RER,
       SDI,
-      multaFinal,
+  multaFinal,
+  multaRaw,
+  topeLegal,
+  aplicoTope,
       severity: activityData.severity,
       activityName: activityData.name
     };
@@ -213,7 +220,6 @@ const MPRIVCalculator: React.FC = () => {
     if (!results) return;
     setSimRunning(true);
     
-    // Variación en PDI (±10%) e IED/INT/RER (±15%)
     const isGrave = results.severity === 'grave';
     const RDM_min = isGrave ? 0.007 : 0.001;
     const RDM_max = isGrave ? 0.010 : 0.007;
@@ -222,38 +228,36 @@ const MPRIVCalculator: React.FC = () => {
     const fines: number[] = [];
 
     for (let i = 0; i < iterations; i++) {
-      // Variabilidad en PDI (±10%) - 0.9 + Math.random() * 0.2
-      const pdiVariation = 0.9 + Math.random() * 0.2; 
+      // 1. Variación PDI (±10%)
+      const pdiVariation = 0.9 + Math.random() * 0.2;
+      const variablePDI = (results.PDI * pdiVariation) / 100;
       
-      // Variabilidad en factores SDI (±15%) - 0.85 + Math.random() * 0.3
-  const iedVar = results.IED * (0.85 + Math.random() * 0.3);
-  const intVar = results.INT * (0.85 + Math.random() * 0.3);
-  const rerVar = results.RER * (0.85 + Math.random() * 0.3);
-
-      // Recalcular CDI con variabilidad
-      const variablePDI = (results.PDI * pdiVariation) / 100; // PDI a decimal con variación
+      // 2. Recalcular CDI con PDI variable (VDN fijo)
       const simulatedCDI = (VDN * RDM_min) + (variablePDI * (VDN * (RDM_max - RDM_min)));
       
-      // Recalcular SDI con variabilidad (usar escala normalizada 0-1)
-      const iedNormalizedVar = iedVar;           // IED ya está en 0-1
-      const intNormalizedVar = intVar;           // INT ya está normalizado 0-1
-      const rerNormalizedVar = rerVar / 100;     // RER a escala 0-1
+      // 3. Variación en factores IED/INT/RER (±15%)
+      const iedVar = results.IED * (0.85 + Math.random() * 0.3);
+      const intVar = results.INT * (0.85 + Math.random() * 0.3);
+      const rerVar = results.RER * (0.85 + Math.random() * 0.3);
       
-      // Fórmula correcta del PDF: SDI = 2 * (componentes ponderados en escala 0-1)
-      const simulatedSDI = 2 * (
-        SDI_WEIGHTS.IED * iedNormalizedVar +
-        SDI_WEIGHTS.INT * intNormalizedVar +
-        SDI_WEIGHTS.RER * rerNormalizedVar
-      );
-
-      // Multa final
-      const finalFine = Math.max(0, simulatedCDI * simulatedSDI);
+      // 4. SDI según metodología oficial: SDI = 2 * (IED + INT + RER)
+      // Los componentes ya vienen con sus pesos aplicados desde el cálculo base
+      const simulatedSDI = 2 * (iedVar + intVar + rerVar);
+      
+      // 5. Multa bruta
+      const multaRaw = simulatedCDI * simulatedSDI;
+      
+      // 6. Aplicar tope legal (1% VDN fijo)
+      const topeLegal = VDN * 0.01;
+      const finalFine = Math.min(multaRaw, topeLegal);
 
       simulationResults.push({
         iteration: i + 1,
         cdi: simulatedCDI,
         sdi: simulatedSDI,
-        finalFine: finalFine
+        multaRaw: multaRaw,
+        finalFine: finalFine,
+        aplicoTope: multaRaw > topeLegal
       });
 
       fines.push(finalFine);
@@ -281,8 +285,19 @@ const MPRIVCalculator: React.FC = () => {
     const labels = Array.from({ length: bins }, (_, i) => {
       const binStart = minFine + i * binSize;
       const binEnd = binStart + binSize;
-      // Mejorar formato: mostrar como $85K - $95K en lugar de 85K - 95K
-      return `$${Math.round(binStart / 1000)}K - $${Math.round(binEnd / 1000)}K`;
+      
+      // Función para formatear valores de manera más legible
+      const formatValue = (value: number): string => {
+        if (value >= 1_000_000) {
+          return `${(value / 1_000_000).toFixed(1)}M`;
+        } else if (value >= 1_000) {
+          return `${Math.round(value / 1_000)}K`;
+        } else {
+          return `${Math.round(value)}`;
+        }
+      };
+      
+      return `$${formatValue(binStart)} - $${formatValue(binEnd)}`;
     });
 
     setHistSeries({ labels, counts: histogram });
@@ -341,6 +356,9 @@ const MPRIVCalculator: React.FC = () => {
     const payload = {
       company: 'Almacenes Tía',
       multa: results.multaFinal,
+      multaBruta: results.multaRaw,
+      aplicoTope: results.aplicoTope,
+      topeLegal: results.topeLegal,
       severity: results.severity,
       histChartDataUrl: histUrl || null,
       monteCarloStats: simStats || null,
@@ -780,7 +798,17 @@ const MPRIVCalculator: React.FC = () => {
                       <div className="card result-card border-primary">
                         <div className="card-body text-center">
                           <div className="display-6 fw-bold text-primary">{formatCurrency(results.multaFinal)}</div>
-                          <div className="text-muted">Multa final aproximada</div>
+                          <div className="text-muted">
+                            Multa final aproximada{results.aplicoTope ? ' (aplicando tope 1%)' : ''}
+                          </div>
+                          {results.aplicoTope && (
+                            <div className="mt-2">
+                              <span className="badge bg-danger">
+                                Tope aplicado: 1% VDN ({formatCurrency(results.topeLegal)})
+                              </span>
+                              <div className="small text-muted mt-1">Bruta: {formatCurrency(results.multaRaw)}</div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -838,23 +866,30 @@ const MPRIVCalculator: React.FC = () => {
                             </div>
                           )}
 
-                          <button
-                            type="button"
-                            className="btn btn-primary mb-4"
-                            onClick={() => runMonteCarloSimulation(1000)}
-                            disabled={simRunning}
-                          >
-                            {simRunning ? (
-                              <>
-                                <span className="spinner-border spinner-border-sm me-2" /> Ejecutando simulación…
-                              </>
-                            ) : (
-                              <>
-                                <i className="bi bi-play-circle me-2"></i>
-                                Ejecutar Simulación Monte Carlo (1,000 iteraciones)
-                              </>
-                            )}
-                          </button>
+                          {results.aplicoTope ? (
+                            <div className="alert alert-info" role="alert">
+                              <i className="bi bi-info-circle me-2"></i>
+                              <strong>Simulación no disponible:</strong> Al aplicarse el tope legal del 1% del VDN, todos los escenarios de la simulación convergerían al mismo valor límite, por lo que no proporcionaría información adicional útil.
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className="btn btn-primary mb-4"
+                              onClick={() => runMonteCarloSimulation(1000)}
+                              disabled={simRunning}
+                            >
+                              {simRunning ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" /> Ejecutando simulación…
+                                </>
+                              ) : (
+                                <>
+                                  <i className="bi bi-play-circle me-2"></i>
+                                  Ejecutar Simulación Monte Carlo (1,000 iteraciones)
+                                </>
+                              )}
+                            </button>
+                          )}
 
                           {histSeries && (
                             <div className="chart-container mt-4">
@@ -913,7 +948,7 @@ const MPRIVCalculator: React.FC = () => {
                               type="button"
                               className="btn btn-danger"
                               onClick={handleDownloadPDF}
-                              disabled={!results || downloading || !histSeries}
+                              disabled={!results || downloading || (!histSeries && !results.aplicoTope)}
                             >
                               {downloading ? (
                                 <>

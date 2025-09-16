@@ -30,7 +30,20 @@ const getLogoBase64 = async () => {
 app.post('/api/report/pdf', async (req, res) => {
   const startedAt = Date.now();
   try {
-    const { company = 'Almacenes Tía', multa, severity, histChartDataUrl, timestamp, monteCarloStats, summary, narrative } = req.body || {};
+    const { 
+      company = 'Almacenes Tía', 
+      multa, 
+      multaBruta, 
+      aplicoTope, 
+      topeLegal, 
+      severity, 
+      histChartDataUrl, 
+      timestamp, 
+      monteCarloStats, 
+      summary, 
+      narrative 
+    } = req.body || {};
+    
     if (typeof multa !== 'number' || !severity) {
       return res.status(400).json({ error: 'Datos insuficientes para generar el reporte.' });
     }
@@ -69,7 +82,10 @@ app.post('/api/report/pdf', async (req, res) => {
             <tr><td>Naturaleza de la Vulneración</td><td>${summary.naturalezaVulneracion || ''}</td></tr>
             <tr><td>Incluye Grupos Vulnerables</td><td>${summary.gruposVulnerables || 'NO'}</td></tr>
             <tr><td>Nivel de Intencionalidad</td><td>${summary.intencionalidad || ''}</td></tr>
-            <tr><td>Multa Administrativa Estimada</td><td class="highlight-amount">$${Math.round(summary.multaEstimacion || 0).toLocaleString('es-EC')}</td></tr>
+            <tr><td>Multa Administrativa Estimada</td><td class="highlight-amount">${formatCurrency(multa)}</td></tr>
+            ${aplicoTope && typeof multaBruta === 'number' ? 
+              `<tr><td>Multa Bruta (antes del tope)</td><td class="text-muted">${formatCurrency(multaBruta)}</td></tr>` : 
+              ''}
           </tbody>
         </table>
       </div>` : '';
@@ -218,6 +234,7 @@ app.post('/api/report/pdf', async (req, res) => {
     .tabla-resumen tr:nth-child(even) td { background: #fdf8f8; }
     .tabla-resumen tr:hover td { background: #fff0f0; }
     .highlight-amount { color: #E4002B; font-weight: 700; font-size: 14px; }
+    .text-muted { color: #6c757d; font-weight: 500; }
   </style>
 </head>
 <body>
