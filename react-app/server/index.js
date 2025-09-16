@@ -74,8 +74,9 @@ app.post('/api/report/pdf', async (req, res) => {
           <thead><tr><th>Parámetro</th><th>Valor Seleccionado</th></tr></thead>
           <tbody>
             <tr><td>Área</td><td>${summary.area || ''}</td></tr>
-            <tr><td>Actividad</td><td>${summary.actividad || ''}</td></tr>
-            <tr><td>Riesgo Identificado</td><td>${summary.riesgo || ''}</td></tr>
+            <tr><td>Proceso</td><td>${summary.proceso || ''}</td></tr>
+            <tr><td>Riesgo Identificado</td><td>${summary.actividad || ''}</td></tr>
+            <tr><td>Descripción del Riesgo</td><td>${summary.riesgo || ''}</td></tr>
             <tr><td>Categoría de la Infracción</td><td>${summary.categoriaInfraccion || ''}</td></tr>
             <tr><td>Titulares Afectados</td><td>${(summary.titularesAfectados || 0).toLocaleString('es-EC')}</td></tr>
             <tr><td>Tipos de Datos Afectados</td><td>${summary.tiposDatos || ''}</td></tr>

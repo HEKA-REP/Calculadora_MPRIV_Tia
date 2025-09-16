@@ -1,151 +1,402 @@
 export const VDN = 700000000;
 
-// Tipos para mejor tipado
-export interface Activity {
+export interface RiesgoIdentificado {
   name: string;
+  nombre_completo: string;
+  descripcion: string;
   severity: 'leve' | 'grave';
-  description: string;
   pdi: number;
 }
 
-export interface ActivityGroup {
-  [key: string]: Activity;
+export interface Proceso {
+  name: string;
+  riesgos: {
+    [key: string]: RiesgoIdentificado;
+  };
+}
+
+export interface Area {
+  name: string;
+  procesos: {
+    [key: string]: Proceso;
+  };
 }
 
 export interface Activities {
-  [key: string]: ActivityGroup;
+  [key: string]: Area;
 }
 
 export const activities: Activities = {
-  marketing: {
-    email_marketing: {
-      name: "Email Marketing",
-      severity: "leve",
-      description: "Envío de correos promocionales sin consentimiento explícito",
-      pdi: 30
-    },
-    publicidad_dirigida: {
-      name: "Publicidad Dirigida",
-      severity: "grave",
-      description: "Segmentación y perfilado sin base legal adecuada",
-      pdi: 60
-    },
-    analisis_comportamiento: {
-      name: "Análisis de Comportamiento",
-      severity: "grave",
-      description: "Tracking y análisis sin consentimiento explícito",
-      pdi: 80
+  marketing_digital: {
+    name: "Marketing Digital",
+    procesos: {
+      mailup: {
+        name: "Mailup",
+        riesgos: {
+          transferencia_bases: {
+            name: "Transferencia de bases no estandarizada",
+            nombre_completo: "Transferencia de bases por canales no estandarizados y envío directo al proveedor",
+            descripcion: "Este riesgo se refiere a la práctica de enviar bases de datos de clientes a proveedores externos utilizando canales no oficiales o no seguros, como correos personales, aplicaciones de mensajería o medios de almacenamiento no controlados, sin seguir los protocolos establecidos de seguridad y privacidad de datos.",
+            severity: "leve",
+            pdi: 50
+          },
+          control_acceso: {
+            name: "Falta de control en el acceso",
+            nombre_completo: "Falta de control en el acceso a bases administradas por el proveedor",
+            descripcion: "Se presenta cuando no existen mecanismos adecuados para controlar, monitorear o limitar quién puede acceder a las bases de datos que están bajo la administración de proveedores externos, generando riesgos de acceso no autorizado o uso indebido de la información personal.",
+            severity: "leve",
+            pdi: 50
+          }
+        }
+      },
+      formularios_google: {
+        name: "Formularios Google",
+        riesgos: {
+          cuentas_no_corporativas: {
+            name: "Uso de cuentas no corporativas",
+            nombre_completo: "Uso de cuentas no corporativas para formularios históricos sin depuración",
+            descripcion: "Este riesgo implica la utilización de cuentas de correo o servicios personales en lugar de cuentas corporativas oficiales para la gestión de formularios y datos históricos, lo que puede comprometer la seguridad y el control sobre la información personal recopilada.",
+            severity: "grave",
+            pdi: 50
+          }
+        }
+      },
+      portal_ganadores: {
+        name: "Portal corporativo ganadores",
+        riesgos: {
+          correos_personales: {
+            name: "Dependencia de correos personales",
+            nombre_completo: "Dependencia de correos personales para formularios y concursos",
+            descripcion: "Este riesgo se relaciona con el uso de cuentas de correo personales en lugar de corporativas para la gestión de formularios institucionales y actividades comerciales, lo que puede afectar la trazabilidad y control de datos personales.",
+            severity: "grave",
+            pdi: 50
+          }
+        }
+      },
+      radio_redes: {
+        name: "Atención por radio/redes (captación de ganadores)",
+        riesgos: {
+          transferencia_redes: {
+            name: "Transferencia de datos en redes sociales",
+            nombre_completo: "Transferencia de datos en redes sociales y sorteos sin aviso visible",
+            descripcion: "En las dinámicas en vivo se captan datos personales y se formaliza su recepción mediante acta de entrega, pero el aviso de protección de datos no se muestra durante la transmisión. Esto puede generar tratamientos sin consentimiento informado",
+            severity: "leve",
+            pdi: 50
+          }
+        }
+      }
     }
   },
-  ventas: {
-    gestion_clientes: {
-      name: "Gestión de Clientes (CRM)",
-      severity: "leve",
-      description: "Almacenamiento inadecuado de datos de clientes",
-      pdi: 20
-    },
-    procesamiento_pagos: {
-      name: "Procesamiento de Pagos",
-      severity: "grave",
-      description: "Manejo inadecuado de datos financieros sensibles",
-      pdi: 90
-    },
-    historial_compras: {
-      name: "Historial de Compras",
-      severity: "leve",
-      description: "Uso no autorizado del historial transaccional",
-      pdi: 40
+  servicio_cliente: {
+    name: "Servicio al cliente",
+    procesos: {
+      fresh_mensajea: {
+        name: "Fresh / Mensajea / Freshcaller",
+        riesgos: {
+          visibilidad_tickets: {
+            name: "Visibilidad universal de tickets",
+            severity: "grave",
+            nombre_completo: "Visibilidad universal de tickets",
+            descripcion: "Todos los asesores pueden revisar tickets y registros de historiales de chat con clientes de otros compañeros, sin restricciones. Existen grabaciones de llamadas y tickets conservados.",
+            pdi: 50
+          }
+        }
+      },
+      limites_visibilidad: {
+        name: "Límites de visibilidad",
+        riesgos: {
+          visibilidad_ampliada: {
+            name: "Visibilidad ampliada en grupos",
+            severity: "grave",
+            nombre_completo: "Visibilidad ampliada en grupos de mensajería y llamadas",
+            descripcion: "Todos los agentes pueden acceder a conversaciones y llamadas internas, lo que incrementa el riesgo de exposición de datos y de pérdida de confidencialidad.",
+            pdi: 50
+          }
+        }
+      }
     }
   },
-  rrhh: {
-    datos_empleados: {
-      name: "Datos de Empleados",
-      severity: "grave",
-      description: "Tratamiento inadecuado de información laboral",
-      pdi: 50
-    },
-    nomina: {
-      name: "Nómina y Beneficios",
-      severity: "grave",
-      description: "Exposición no autorizada de datos salariales",
-      pdi: 70
-    },
-    evaluacion_desempeno: {
-      name: "Evaluación de Desempeño",
-      severity: "leve",
-      description: "Uso inadecuado de evaluaciones laborales",
-      pdi: 30
+  data_science: {
+    name: "Data Science",
+    procesos: {
+      analitica_clientes: {
+        name: "Analítica de Clientes / Data Science",
+        riesgos: {
+          acceso_bases: {
+            name: "Acceso a bases de datos",
+            severity: "leve",
+            nombre_completo: "Acceso a bases de datos",
+            descripcion: "Todos los analistas tienen acceso a las bases de datos de clientes sin restricciones, lo que puede aumentar el riesgo de exposición o uso indebido de la información personal.",
+            pdi: 50
+          }
+        }
+      }
     }
   },
-  financiero: {
-    facturacion: {
-      name: "Facturación",
-      severity: "leve",
-      description: "Manejo inadecuado de datos fiscales",
-      pdi: 40
-    },
-    credito_cobranza: {
-      name: "Crédito y Cobranza",
-      severity: "grave",
-      description: "Uso no autorizado para evaluación crediticia",
-      pdi: 80
-    },
-    reportes_financieros: {
-      name: "Reportes Financieros",
-      severity: "leve",
-      description: "Divulgación inadecuada de informes",
-      pdi: 25
+  data_science_fidelizacion: {
+    name: "Data Science/Fidelización",
+    procesos: {
+      whatsapp_publimex: {
+        name: "WhatsApp Marketing (Publimex)",
+        riesgos: {
+          campanas_universo_amplio: {
+            name: "Envío de campañas a universo amplio",
+            severity: "grave",
+            nombre_completo: "Envío de campañas a un universo amplio de clientes",
+            descripcion: "Envío de campañas a un universo amplio de clientes sin segmentación adecuada, lo que puede resultar en comunicaciones no deseadas y afectar la percepción de la marca.",
+            pdi: 50
+          }
+        }
+      }
     }
   },
-  logistica: {
-    gestion_entregas: {
-      name: "Gestión de Entregas",
-      severity: "leve",
-      description: "Uso inadecuado de datos de entrega",
-      pdi: 20
-    },
-    tracking_productos: {
-      name: "Tracking de Productos",
-      severity: "leve",
-      description: "Seguimiento no autorizado con datos del cliente",
-      pdi: 35
-    },
-    proveedores: {
-      name: "Gestión de Proveedores",
-      severity: "leve",
-      description: "Compartir datos inadecuadamente con terceros",
-      pdi: 50
+  sistemas_fidelizacion: {
+    name: "Sistemas/Fidelización",
+    procesos: {
+      capa_tecnica: {
+        name: "Capa técnica / Datos (Integraciones)",
+        riesgos: {
+          desincronizacion: {
+            name: "Desincronización de equipos y flujos",
+            severity: "grave",
+            nombre_completo: "Desincronización de equipos y flujos de datos",
+            descripcion: "Desincronización de equipos y flujos de datos y demás procesos relacionados, lo que puede generar inconsistencias en la información y en la atención al cliente.",
+            pdi: 50
+          }
+        }
+      }
     }
   },
-  ecommerce: {
-    tienda_online: {
-      name: "Tienda Online",
-      severity: "grave",
-      description: "Falta de medidas de seguridad en e-commerce",
-      pdi: 60
-    },
-    cookies_tracking: {
-      name: "Cookies y Tracking",
-      severity: "grave",
-      description: "Cookies de seguimiento sin consentimiento válido",
-      pdi: 70
-    },
-    integracion_redes: {
-      name: "Integración Redes Sociales",
-      severity: "grave",
-      description: "Transferencia no autorizada a redes sociales",
-      pdi: 55
+  fidelizacion: {
+    name: "Fidelización",
+    procesos: {
+      consentimientos_correo: {
+        name: "Consentimientos / Correo masivo",
+        riesgos: {
+          verificacion_consentimientos: {
+            name: "Falta de verificación masiva de consentimientos",
+            severity: "grave",
+            nombre_completo: "Falta de verificación masiva de consentimientos",
+            descripcion: "Falta de verificación masiva de consentimientos, lo que puede resultar en el envío de comunicaciones a personas que no han otorgado su consentimiento explícito, incumpliendo las normativas de protección de datos.",
+            pdi: 50
+          }
+        }
+      },
+      whatsapp_numeracion: {
+        name: "WhatsApp marketing (numeración)",
+        riesgos: {
+          bases_compartidas: {
+            name: "Bases de datos con almacenamiento compartido",
+            severity: "grave",
+            nombre_completo: "Bases de datos con almacenamiento compartido y contratos ambiguos",
+            descripcion: "Este riesgo se refiere a la práctica de almacenar bases de datos de clientes en plataformas compartidas entre múltiples clientes o usuarios, lo que puede generar confusión sobre la propiedad y el control de los datos. Además, los contratos ambiguos con los proveedores pueden dificultar la gestión adecuada de la privacidad y seguridad de la información personal.",
+            pdi: 50
+          }
+        }
+      },
+      alianzas_farmaenlace: {
+        name: "Alianzas (Farmaenlace - validación por API)",
+        riesgos: {
+          envio_aliados: {
+            name: "Envío de datos por aliados",
+            severity: "grave",
+            nombre_completo: "Envío de datos por aliados con distintos niveles de información",
+            descripcion: "Este riesgo se refiere a la transferencia de datos personales a través de aliados o terceros que pueden tener diferentes niveles de acceso o información sobre los titulares de los datos. Esto puede generar inconsistencias en la gestión de la privacidad y aumentar el riesgo de exposición o uso indebido de la información personal.",
+            pdi: 50
+          }
+        }
+      },
+      landing_pages: {
+        name: "Landing pages / Formularios externos",
+        riesgos: {
+          bases_paralelas: {
+            name: "Creación de bases paralelas",
+            severity: "grave",
+            nombre_completo: "Creación de bases paralelas con baja integridad en contingencias",
+            descripcion: "Este riesgo se refiere a la práctica de crear y mantener bases de datos paralelas para la gestión de datos personales, especialmente en situaciones de contingencia. Estas bases pueden tener baja integridad, lo que implica que la información puede estar incompleta, desactualizada o incorrecta, afectando la calidad del servicio y la protección de los datos personales.",
+            pdi: 50
+          }
+        }
+      }
+    }
+  },
+  creditia: {
+    name: "Creditía",
+    procesos: {
+      jelou_activaciones: {
+        name: "Jelou - activaciones",
+        riesgos: {
+          almacenamiento_indefinido: {
+            name: "Almacenamiento indefinido de registros",
+            severity: "grave",
+            nombre_completo: "Almacenamiento indefinido de registros de activación por WhatsApp",
+            descripcion: "Almacenamiento indefinido de registros de activación por WhatsApp, lo que puede implicar la retención innecesaria de datos personales más allá del tiempo requerido para la finalidad original, aumentando el riesgo de exposición o uso indebido de la información.",
+            pdi: 50
+          }
+        }
+      },
+      usuarios_permisos: {
+        name: "Usuarios y permisos en tiendas",
+        riesgos: {
+          cuentas_genericas: {
+            name: "Uso de cuentas genéricas por tienda",
+            severity: "grave",
+            nombre_completo: "Uso de cuentas genéricas por tienda",
+            descripcion: "Uso de cuentas genéricas por tienda, lo que dificulta la trazabilidad y responsabilidad individual en el manejo de datos personales, aumentando el riesgo de acceso no autorizado o uso indebido de la información.",
+            pdi: 50
+          }
+        }
+      },
+      cobranzas_terceros: {
+        name: "Cobranzas – terceros",
+        riesgos: {
+          envio_carteras: {
+            name: "Envío de carteras vencidas a terceros",
+            severity: "grave",
+            nombre_completo: "Envío de carteras vencidas a terceros por correo electrónico",
+            descripcion: "Envío de carteras vencidas a terceros por correo electrónico, lo que puede comprometer la seguridad y confidencialidad de los datos personales contenidos en dichas carteras, aumentando el riesgo de acceso no autorizado o uso indebido de la información.",
+            pdi: 50
+          }
+        }
+      },
+      verificaciones_externas: {
+        name: "Verificaciones externas",
+        riesgos: {
+          validacion_identidad: {
+            name: "Validación de identidad y evaluación crediticia",
+            severity: "leve",
+            nombre_completo: "Validación de identidad y evaluación crediticia con contratos pendientes de actualización",
+            descripcion: "Validación de identidad y evaluación crediticia con contratos pendientes de actualización, lo que puede generar incertidumbre sobre las responsabilidades y obligaciones de las partes involucradas en el manejo de datos personales.",
+            pdi: 50
+          }
+        }
+      }
+    }
+  },
+  fidelizacion_marketing_btl_creditia: {
+    name: "Fidelización/Marketing/BTL/Creditía",
+    procesos: {
+      consumo_empresarial: {
+        name: "Consumo Empresarial (SGC / iDempiere)",
+        riesgos: {
+          procedimiento_eliminacion: {
+            name: "Ausencia de procedimiento formal para eliminación",
+            severity: "grave",
+            nombre_completo: "Ausencia de procedimiento formal para eliminación de datos en listados recibidos por correo",
+            descripcion: "Ausencia de procedimiento formal para eliminación de datos en listados recibidos por correo, lo que puede resultar en la retención innecesaria de datos personales y aumentar el riesgo de incumplimiento de las normativas de protección de datos.",
+            pdi: 50
+          }
+        }
+      }
+    }
+  },
+  fidelizacion_servicio_cliente: {
+    name: "Fidelización/Servicio al cliente",
+    procesos: {
+      alianzas_barcelona: {
+        name: "Alianzas (Socios Barcelona y otros)",
+        riesgos: {
+          procedimiento_borrado: {
+            name: "Ausencia de procedimiento formal para borrado",
+            severity: "grave",
+            nombre_completo: "Ausencia de procedimiento formal para borrado de datos",
+            descripcion: "Ausencia de procedimiento formal para borrado de datos, lo que puede llevar a la retención innecesaria de información personal y aumentar el riesgo de incumplimiento de las leyes de protección de datos.",
+            pdi: 50
+          }
+        }
+      }
+    }
+  },
+  consumo_empresarial: {
+    name: "Consumo Empresarial",
+    procesos: {
+      comunicaciones: {
+        name: "Comunicaciones",
+        riesgos: {
+          intercambio_urgencia: {
+            name: "Intercambio de datos en casos de urgencia",
+            severity: "grave",
+            nombre_completo: "Intercambio de datos por correo y WhatsApp en casos de urgencia",
+            descripcion: "Intercambio de datos por correo y WhatsApp en casos de urgencia, lo que puede comprometer la seguridad y confidencialidad de la información personal al utilizar canales no oficiales o no seguros.",
+            pdi: 50
+          }
+        }
+      }
+    }
+  },
+  sistemas: {
+    name: "Sistemas",
+    procesos: {
+      core_continuidad: {
+        name: "Core / Continuidad",
+        riesgos: {
+          ausencia_backup: {
+            name: "Ausencia de respaldo (backup)",
+            severity: "grave",
+            nombre_completo: "Ausencia de respaldo (backup) en el sistema core",
+            descripcion: "Ausencia de respaldo (backup) en el sistema core, lo que puede poner en riesgo la disponibilidad y recuperación de datos en caso de fallos o incidentes, afectando la continuidad del negocio y la protección de los datos personales.",
+            pdi: 50
+          }
+        }
+      },
+      core_consentimientos: {
+        name: "Core / Consentimientos",
+        riesgos: {
+          falta_captacion: {
+            name: "Falta de captación de consentimientos",
+            severity: "grave",
+            nombre_completo: "Falta de captación de consentimientos por caída del sistema",
+            descripcion: "Falta de captación de consentimientos por caída del sistema, lo que puede resultar en el tratamiento de datos personales sin el consentimiento adecuado de los titulares, incumpliendo las normativas de protección de datos.",
+            pdi: 50
+          }
+        }
+      },
+      terceros_uruguay: {
+        name: "Terceros (Corporativo Uruguay)",
+        riesgos: {
+          ausencia_sla: {
+            name: "Ausencia de acuerdo de nivel de servicio (SLA)",
+            severity: "grave",
+            nombre_completo: "Ausencia de acuerdo de nivel de servicio (SLA) en soporte internacional",
+            descripcion: "Ausencia de acuerdo de nivel de servicio (SLA) en soporte internacional, lo que puede generar incertidumbre sobre los tiempos y calidad del servicio proporcionado, afectando la gestión adecuada de los datos personales.",
+            pdi: 50
+          }
+        }
+      }
+    }
+  },
+  sac: {
+    name: "SAC",
+    procesos: {
+      sac_proceso: {
+        name: "SAC",
+        riesgos: {
+          bases_externas: {
+            name: "Uso de bases externas para campañas",
+            severity: "grave",
+            nombre_completo: "Uso de bases externas para campañas",
+            descripcion: "Uso de bases externas para campañas, lo que puede comprometer la calidad y seguridad de los datos personales al depender de fuentes externas que pueden no cumplir con las normativas de protección de datos.",
+            pdi: 50
+          }
+        }
+      }
     }
   }
 };
 
 export const areas = {
-  marketing: 'Marketing y Publicidad',
-  ventas: 'Ventas y Atención al Cliente',
-  rrhh: 'Recursos Humanos',
-  financiero: 'Área Financiera',
-  logistica: 'Logística y Distribución',
-  ecommerce: 'E-commerce y Digital'
+  marketing_digital: 'Marketing Digital',
+  servicio_cliente: 'Servicio al cliente',
+  data_science: 'Data Science',
+  data_science_fidelizacion: 'Data Science/Fidelización',
+  sistemas_fidelizacion: 'Sistemas/Fidelización',
+  fidelizacion: 'Fidelización',
+  creditia: 'Creditía',
+  fidelizacion_marketing_btl_creditia: 'Fidelización/Marketing/BTL/Creditía',
+  fidelizacion_servicio_cliente: 'Fidelización/Servicio al cliente',
+  consumo_empresarial: 'Consumo Empresarial',
+  sistemas: 'Sistemas',
+  sac: 'SAC'
 };
 
 export const impactoDerechosOptions = {
@@ -257,7 +508,7 @@ export interface TipoDatoPersonal {
 export const titularCategories: TitularCategory[] = [
   { id: 'clientes', label: 'Clientes' },
   { id: 'proveedores', label: 'Proveedores' },
-  { id: 'empleados', label: 'Empleados' },
+  { id: 'colaboradores', label: 'Colaboradores' },
   { id: 'prospectos', label: 'Prospectos / Leads' },
   { id: 'visitantes', label: 'Visitantes (Sitio/App)' }
 ];
@@ -274,15 +525,13 @@ export const vulnerableGroups: VulnerableGroup[] = [
 
 // Catálogo: tipos de datos personales (TDP)
 export const tiposDatosPersonales: TipoDatoPersonal[] = [
-  { id: 'identificativos', label: 'Datos identificativos básicos (nombre, cédula, dirección)', sensibilidad: 'baja', params: { a: 10, b: 20, c: 30 } },
-  { id: 'contacto', label: 'Datos de contacto (email, teléfono)', sensibilidad: 'baja', params: { a: 15, b: 25, c: 35 } },
-  { id: 'laborales', label: 'Datos laborales (puesto, salario, empresa)', sensibilidad: 'media', params: { a: 25, b: 40, c: 55 } },
-  { id: 'financieros', label: 'Datos financieros (tarjetas, cuentas bancarias)', sensibilidad: 'alta', params: { a: 50, b: 70, c: 85 } },
-  { id: 'biometricos', label: 'Datos biométricos (huellas, reconocimiento facial)', sensibilidad: 'muy_alta', params: { a: 70, b: 85, c: 95 } },
-  { id: 'salud', label: 'Datos de salud (historial médico, condiciones)', sensibilidad: 'muy_alta', params: { a: 75, b: 90, c: 100 } },
-  { id: 'ubicacion', label: 'Datos de ubicación (GPS, geolocalización)', sensibilidad: 'media', params: { a: 30, b: 45, c: 60 } },
-  { id: 'comportamiento', label: 'Datos de comportamiento (navegación, preferencias)', sensibilidad: 'media', params: { a: 20, b: 35, c: 50 } },
-  { id: 'ideologicos', label: 'Datos ideológicos (religión, política, orientación sexual)', sensibilidad: 'muy_alta', params: { a: 65, b: 80, c: 95 } }
+  { id: 'identificativos', label: '<strong>Datos Identificativos:</strong> Información que permite la identificación de una persona.', sensibilidad: 'baja', params: { a: 10, b: 20, c: 30 } },
+  { id: 'contacto', label: '<strong>Datos de Contacto:</strong> Incluyen detalles para comunicarse con la persona, como correos electrónicos o números de teléfono.', sensibilidad: 'baja', params: { a: 15, b: 25, c: 35 } },
+  { id: 'demograficos', label: '<strong>Datos Demográficos:</strong> Características de la población, como edad o género.', sensibilidad: 'media', params: { a: 20, b: 30, c: 40 } },
+  { id: 'financieros', label: '<strong>Datos Financieros:</strong> Información económica o bancaria de las personas.', sensibilidad: 'alta', params: { a: 50, b: 70, c: 85 } },
+  { id: 'biometricos', label: '<strong>Datos Biométricos:</strong> Datos relacionados con características físicas o de comportamiento únicas, como huellas dactilares o reconocimiento facial.', sensibilidad: 'muy_alta', params: { a: 70, b: 85, c: 95 } },
+  { id: 'academicos', label: '<strong>Datos Académicos:</strong> Información sobre el historial educativo de una persona.', sensibilidad: 'media', params: { a: 25, b: 35, c: 45 } },
+  { id: 'salud', label: '<strong>Datos de Salud:</strong> Información relacionada con la condición de salud física o mental.', sensibilidad: 'muy_alta', params: { a: 75, b: 90, c: 100 } }
 ];
 
 // Ponderaciones y constantes del modelo

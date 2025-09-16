@@ -14,12 +14,13 @@ import {
   RER_FIXED,
   TOTAL_TITULARES_EMPRESA,
   IED_NORMALIZATION,
-  type Activity
+  type RiesgoIdentificado
 } from '../data/mprivData';
 
 interface FormData {
   area: string;
-  activity: string;
+  proceso: string;
+  riesgo: string;
   // IED inputs 
   titulares: Record<string, number>; // cantidades por categoría (clientes, proveedores, etc.)
   titularesSeleccionados: string[]; // categorías marcadas por el usuario
@@ -51,7 +52,8 @@ interface CalculationResults {
 const MPRIVCalculator: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     area: '',
-    activity: '',
+    proceso: '',
+    riesgo: '',
     titulares: {},
     titularesSeleccionados: [],
     tieneVulnerables: false,
@@ -78,20 +80,20 @@ const MPRIVCalculator: React.FC = () => {
   };
 
   const calculateMPRIV = (data: FormData): CalculationResults | null => {
-    const { area, activity, intencionalidad, naturalezaVulneracion } = data;
+    const { area, proceso, riesgo, intencionalidad, naturalezaVulneracion } = data;
     
-    if (!area || !activity || !intencionalidad || !naturalezaVulneracion) {
+    if (!area || !proceso || !riesgo || !intencionalidad || !naturalezaVulneracion) {
       return null;
     }
 
-    const activityData = activities[area]?.[activity] as Activity;
-    if (!activityData) return null;
+    const riesgoData = activities[area]?.procesos[proceso]?.riesgos[riesgo];
+    if (!riesgoData) return null;
 
-    const isGrave = activityData.severity === 'grave';
+    const isGrave = riesgoData.severity === 'grave';
     const RDM_min = isGrave ? 0.007 : 0.001;
     const RDM_max = isGrave ? 0.010 : 0.007;
 
-    const PDI = activityData.pdi / 100;
+    const PDI = riesgoData.pdi / 100;
     const CDI = (VDN * RDM_min) + (PDI * (VDN * (RDM_max - RDM_min)));
 
     // 1) TDP
@@ -200,7 +202,7 @@ const MPRIVCalculator: React.FC = () => {
   const multaFinal = aplicoTope ? topeLegal : multaRaw;
 
     return {
-      PDI: activityData.pdi,
+      PDI: riesgoData.pdi,
       CDI,
       IED,
       INT: INT_normalized,
@@ -210,8 +212,8 @@ const MPRIVCalculator: React.FC = () => {
   multaRaw,
   topeLegal,
   aplicoTope,
-      severity: activityData.severity,
-      activityName: activityData.name
+      severity: riesgoData.severity,
+      activityName: riesgoData.name
     };
   };
 
@@ -325,7 +327,8 @@ const MPRIVCalculator: React.FC = () => {
     const { histUrl } = getChartDataUrls();
     
     // Construir resumen para PDF
-    const activityData = formData.area && formData.activity ? (activities[formData.area]?.[formData.activity] as Activity) : null;
+    const riesgoData = formData.area && formData.proceso && formData.riesgo ? 
+      activities[formData.area]?.procesos[formData.proceso]?.riesgos[formData.riesgo] : null;
     const tiposSeleccionadosNombres = (formData.tiposDatosSeleccionados || []).map(id => {
       const t = tiposDatosPersonales.find(tp => tp.id === id);
       return t ? t.label.split('(')[0].trim() : '';
@@ -340,9 +343,10 @@ const MPRIVCalculator: React.FC = () => {
 
     const pdfSummary = {
       area: formData.area ? areas[formData.area as keyof typeof areas] : '',
-      actividad: activityData?.name || '',
-      riesgo: activityData?.description || '',
-      categoriaInfraccion: activityData ? (activityData.severity === 'grave' ? 'Grave (0.7% al 1.0%)' : 'Leve (0.1% al 0.7%)') : '',
+      proceso: formData.proceso && formData.area ? activities[formData.area]?.procesos[formData.proceso]?.name || '' : '',
+      actividad: riesgoData?.nombre_completo || '',
+      riesgo: riesgoData?.descripcion || '',
+      categoriaInfraccion: riesgoData ? (riesgoData.severity === 'grave' ? 'Grave (0.7% al 1.0%)' : 'Leve (0.1% al 0.7%)') : '',
       titularesAfectados: totalAfectados,
       tiposDatos: tiposSeleccionadosNombres,
       gruposVulnerables: gruposVulnText,
@@ -418,11 +422,15 @@ const MPRIVCalculator: React.FC = () => {
   };
 
   const handleAreaChange = (area: string) => {
-    setFormData(prev => ({ ...prev, area, activity: '' }));
+    setFormData(prev => ({ ...prev, area, proceso: '', riesgo: '' }));
   };
 
-  const handleActivityChange = (activity: string) => {
-    setFormData(prev => ({ ...prev, activity }));
+  const handleProcesoChange = (proceso: string) => {
+    setFormData(prev => ({ ...prev, proceso, riesgo: '' }));
+  };
+
+  const handleRiesgoChange = (riesgo: string) => {
+    setFormData(prev => ({ ...prev, riesgo }));
   };
 
   // Handlers para TAV/TEV
@@ -518,7 +526,7 @@ const MPRIVCalculator: React.FC = () => {
                   <h5 className="mb-0 fw-bold">Contexto de la actividad</h5>
                 </div>
                 <div className="row g-3">
-                  <div className="col-md-6">
+                  <div className="col-md-4">
                     <label htmlFor="area" className="form-label fw-semibold">Área de la Empresa *</label>
                     <select
                       className={`form-select ${!formData.area ? 'text-muted' : ''}`}
@@ -533,23 +541,76 @@ const MPRIVCalculator: React.FC = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="col-md-6">
-                    <label htmlFor="activity" className="form-label fw-semibold">Actividad de Tratamiento *</label>
+                  <div className="col-md-4">
+                    <label htmlFor="proceso" className="form-label fw-semibold">Proceso *</label>
                     <select
-                      className={`form-select ${!formData.activity ? 'text-muted' : ''}`}
-                      id="activity"
-                      value={formData.activity}
-                      onChange={(e) => handleActivityChange(e.target.value)}
+                      className={`form-select ${!formData.proceso ? 'text-muted' : ''}`}
+                      id="proceso"
+                      value={formData.proceso}
+                      onChange={(e) => handleProcesoChange(e.target.value)}
                       required
+                      disabled={!formData.area}
                     >
-                      <option value="" disabled hidden>Seleccione una actividad</option>
+                      <option value="" disabled hidden>Seleccione un proceso</option>
                       {formData.area && activities[formData.area] &&
-                        Object.entries(activities[formData.area]).map(([key, activity]) => (
-                          <option key={key} value={key}>{activity.name}</option>
+                        Object.entries(activities[formData.area].procesos).map(([key, proceso]) => (
+                          <option key={key} value={key}>{proceso.name}</option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="col-md-4">
+                    <label htmlFor="riesgo" className="form-label fw-semibold">Riesgo Identificado *</label>
+                    <select
+                      className={`form-select ${!formData.riesgo ? 'text-muted' : ''}`}
+                      id="riesgo"
+                      value={formData.riesgo}
+                      onChange={(e) => handleRiesgoChange(e.target.value)}
+                      required
+                      disabled={!formData.proceso}
+                    >
+                      <option value="" disabled hidden>Seleccione un riesgo</option>
+                      {formData.area && formData.proceso && activities[formData.area]?.procesos[formData.proceso] &&
+                        Object.entries(activities[formData.area].procesos[formData.proceso].riesgos).map(([key, riesgo]) => (
+                          <option key={key} value={key}>{riesgo.name}</option>
                         ))}
                     </select>
                   </div>
                 </div>
+                
+                {/* Descripción del riesgo seleccionado */}
+                {formData.area && formData.proceso && formData.riesgo && (
+                  <div className="mt-3">
+                    <div className="alert" style={{
+                      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                      border: '1px solid #dee2e6',
+                      borderLeft: '4px solid #dc2626'
+                    }}>
+                      <div className="row align-items-center">
+                        <div className="col-md-1 text-center">
+                          <i className="bi bi-info-circle-fill fs-4" style={{color: '#dc2626'}}></i>
+                        </div>
+                        <div className="col-md-8">
+                          <h6 className="fw-bold mb-1" style={{color: '#dc2626'}}>
+                            {activities[formData.area]?.procesos[formData.proceso]?.riesgos[formData.riesgo]?.nombre_completo}
+                          </h6>
+                          <p className="mb-0" style={{color: '#6c757d'}}>
+                            {activities[formData.area]?.procesos[formData.proceso]?.riesgos[formData.riesgo]?.descripcion}
+                          </p>
+                        </div>
+                        <div className="col-md-3 text-end">
+                          <span className={`badge fs-6 ${activities[formData.area]?.procesos[formData.proceso]?.riesgos[formData.riesgo]?.severity === 'grave' ? 'text-white' : 'text-white'}`}
+                            style={{
+                              background: activities[formData.area]?.procesos[formData.proceso]?.riesgos[formData.riesgo]?.severity === 'grave' 
+                                ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)' 
+                                : 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)'
+                            }}>
+                            {activities[formData.area]?.procesos[formData.proceso]?.riesgos[formData.riesgo]?.severity === 'grave' ? 'GRAVE' : 'LEVE'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Paso 2: IED */}
@@ -581,7 +642,7 @@ const MPRIVCalculator: React.FC = () => {
                               onChange={(e) => handleTipoDatoChange(tipo.id, e.target.checked)}
                             />
                             <div className="flex-grow-1 me-2">
-                              <small>{tipo.label}</small>
+                              <small dangerouslySetInnerHTML={{ __html: tipo.label }}></small>
                             </div>
                           </label>
                         </div>
