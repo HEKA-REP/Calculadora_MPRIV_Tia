@@ -13,8 +13,7 @@ import {
   WEIGHTS,
   RER_FIXED,
   TOTAL_TITULARES_EMPRESA,
-  IED_NORMALIZATION,
-  type RiesgoIdentificado
+  IED_NORMALIZATION
 } from '../data/mprivData';
 
 interface FormData {
