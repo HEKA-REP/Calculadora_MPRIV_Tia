@@ -36,14 +36,14 @@ export const activities: Activities = {
           transferencia_bases: {
             name: "Transferencia de bases no estandarizada",
             nombre_completo: "Transferencia de bases por canales no estandarizados y envío directo al proveedor",
-            descripcion: "Este riesgo se refiere a la práctica de enviar bases de datos de clientes a proveedores externos utilizando canales no oficiales o no seguros, como correos personales, aplicaciones de mensajería o medios de almacenamiento no controlados, sin seguir los protocolos establecidos de seguridad y privacidad de datos.",
+            descripcion: "Se comparten por correo electrónico o por la plataforma \"WeTransfer\", las bases de clientes para campañas (con hasta 1.5M de registros) al proveedor Mailup para cargar esta base de datos a su plataforma y poder los envíos correspondientes.",
             severity: "leve",
             pdi: 50
           },
           control_acceso: {
             name: "Falta de control en el acceso",
             nombre_completo: "Falta de control en el acceso a bases administradas por el proveedor",
-            descripcion: "Se presenta cuando no existen mecanismos adecuados para controlar, monitorear o limitar quién puede acceder a las bases de datos que están bajo la administración de proveedores externos, generando riesgos de acceso no autorizado o uso indebido de la información personal.",
+            descripcion: "Las bases de datos se transfieren a través de Teams o SharePoint y, por su tamaño, también por correo o WeTransfer. El proveedor administra y conserva las bases sin que el área de Sistemas tenga control de los accesos, generando un riesgo de tratamiento no supervisado.",
             severity: "leve",
             pdi: 50
           }
@@ -55,7 +55,7 @@ export const activities: Activities = {
           cuentas_no_corporativas: {
             name: "Uso de cuentas no corporativas",
             nombre_completo: "Uso de cuentas no corporativas para formularios históricos sin depuración",
-            descripcion: "Este riesgo implica la utilización de cuentas de correo o servicios personales en lugar de cuentas corporativas oficiales para la gestión de formularios y datos históricos, lo que puede comprometer la seguridad y el control sobre la información personal recopilada.",
+            descripcion: "Los formularios y respuestas recopilados desde 2015 se gestionan con una cuenta no corporativa (Nexar). El acceso está restringido a solo dos personas mediante autenticador de Google, pero no existe un proceso sistemático de depuración",
             severity: "grave",
             pdi: 50
           }
@@ -67,7 +67,7 @@ export const activities: Activities = {
           correos_personales: {
             name: "Dependencia de correos personales",
             nombre_completo: "Dependencia de correos personales para formularios y concursos",
-            descripcion: "Este riesgo se relaciona con el uso de cuentas de correo personales en lugar de corporativas para la gestión de formularios institucionales y actividades comerciales, lo que puede afectar la trazabilidad y control de datos personales.",
+            descripcion: "Algunas campañas usan un correo genérico (nexar.toala10@gmail.com) no corporativo para gestionar y almacenar formularios desde 2015, con información de clientes y participantes.",
             severity: "grave",
             pdi: 50
           }
@@ -79,7 +79,7 @@ export const activities: Activities = {
           transferencia_redes: {
             name: "Transferencia de datos en redes sociales",
             nombre_completo: "Transferencia de datos en redes sociales y sorteos sin aviso visible",
-            descripcion: "En las dinámicas en vivo se captan datos personales y se formaliza su recepción mediante acta de entrega, pero el aviso de protección de datos no se muestra durante la transmisión. Esto puede generar tratamientos sin consentimiento informado",
+            descripcion: "En las dinámicas en vivo se captan datos personales y se formaliza su recepción mediante acta de entrega, pero el aviso de protección de datos no se muestra durante la transmisión. Esto puede generar tratamientos sin consentimiento informado.",
             severity: "leve",
             pdi: 50
           }
@@ -126,7 +126,7 @@ export const activities: Activities = {
             name: "Acceso a bases de datos",
             severity: "leve",
             nombre_completo: "Acceso a bases de datos",
-            descripcion: "Todos los analistas tienen acceso a las bases de datos de clientes sin restricciones, lo que puede aumentar el riesgo de exposición o uso indebido de la información personal.",
+            descripcion: "Recepción de datos de facturación, identificativos, de contacto para posteriormente calcular indicadores comportamentales sin justificar necesidad/pertinencia, de la Tabla maestra (mrkt_crm_cliente_dim).",
             pdi: 50
           }
         }
@@ -143,7 +143,7 @@ export const activities: Activities = {
             name: "Envío de campañas a universo amplio",
             severity: "grave",
             nombre_completo: "Envío de campañas a un universo amplio de clientes",
-            descripcion: "Envío de campañas a un universo amplio de clientes sin segmentación adecuada, lo que puede resultar en comunicaciones no deseadas y afectar la percepción de la marca.",
+            descripcion: "Segmentos extraídos de Databricks se cargan en Publimex para envíos automáticos o manuales; números de WhatsApp de campañas pueden rotar por proveedor.",
             pdi: 50
           }
         }
@@ -160,7 +160,7 @@ export const activities: Activities = {
             name: "Desincronización de equipos y flujos",
             severity: "grave",
             nombre_completo: "Desincronización de equipos y flujos de datos",
-            descripcion: "Desincronización de equipos y flujos de datos y demás procesos relacionados, lo que puede generar inconsistencias en la información y en la atención al cliente.",
+            descripcion: "La información entre el portátil y el escritorio no se replica completamente, lo que genera inconsistencias. Además, los flujos de datos desde Mongo hacia Snowflake y los permisos pendientes de confirmar en Oracle, junto con el uso de Keycloak para identidad, pueden provocar accesos no controlados y pérdida de trazabilidad.",
             pdi: 50
           }
         }
@@ -177,7 +177,7 @@ export const activities: Activities = {
             name: "Falta de verificación masiva de consentimientos",
             severity: "grave",
             nombre_completo: "Falta de verificación masiva de consentimientos",
-            descripcion: "Falta de verificación masiva de consentimientos, lo que puede resultar en el envío de comunicaciones a personas que no han otorgado su consentimiento explícito, incumpliendo las normativas de protección de datos.",
+            descripcion: "Necesidad de coordinar verificación del estado de consentimientos en base masiva y depuración/segmentación para evitar envíos sin autorización actualizada.",
             pdi: 50
           }
         }
@@ -189,7 +189,7 @@ export const activities: Activities = {
             name: "Bases de datos con almacenamiento compartido",
             severity: "grave",
             nombre_completo: "Bases de datos con almacenamiento compartido y contratos ambiguos",
-            descripcion: "Este riesgo se refiere a la práctica de almacenar bases de datos de clientes en plataformas compartidas entre múltiples clientes o usuarios, lo que puede generar confusión sobre la propiedad y el control de los datos. Además, los contratos ambiguos con los proveedores pueden dificultar la gestión adecuada de la privacidad y seguridad de la información personal.",
+            descripcion: "Las bases recibidas periódicamente por correo se guardan en equipos y repositorios compartidos accesibles para mailing y WhatsApp. En algunos convenios, los contratos no definen de manera clara los roles de responsable o encargado del tratamiento",
             pdi: 50
           }
         }
@@ -201,7 +201,7 @@ export const activities: Activities = {
             name: "Envío de datos por aliados",
             severity: "grave",
             nombre_completo: "Envío de datos por aliados con distintos niveles de información",
-            descripcion: "Este riesgo se refiere a la transferencia de datos personales a través de aliados o terceros que pueden tener diferentes niveles de acceso o información sobre los titulares de los datos. Esto puede generar inconsistencias en la gestión de la privacidad y aumentar el riesgo de exposición o uso indebido de la información personal.",
+            descripcion: "Algunos aliados envían bases de datos completas mientras otros solo remiten cédulas para validación vía API, lo que dificulta un control uniforme de los datos tratados.",
             pdi: 50
           }
         }
@@ -213,7 +213,7 @@ export const activities: Activities = {
             name: "Creación de bases paralelas",
             severity: "grave",
             nombre_completo: "Creación de bases paralelas con baja integridad en contingencias",
-            descripcion: "Este riesgo se refiere a la práctica de crear y mantener bases de datos paralelas para la gestión de datos personales, especialmente en situaciones de contingencia. Estas bases pueden tener baja integridad, lo que implica que la información puede estar incompleta, desactualizada o incorrecta, afectando la calidad del servicio y la protección de los datos personales.",
+            descripcion: "Si el sistema core falla y se usan landing forms como alternativa, se genera una base paralela con riesgo de pérdida de integridad y escasas garantías técnicas, dificultando la trazabilidad de los datos.",
             pdi: 50
           }
         }
@@ -230,7 +230,7 @@ export const activities: Activities = {
             name: "Almacenamiento indefinido de registros",
             severity: "grave",
             nombre_completo: "Almacenamiento indefinido de registros de activación por WhatsApp",
-            descripcion: "Almacenamiento indefinido de registros de activación por WhatsApp, lo que puede implicar la retención innecesaria de datos personales más allá del tiempo requerido para la finalidad original, aumentando el riesgo de exposición o uso indebido de la información.",
+            descripcion: "Los registros de activación que incluyen OTP, verificación biométrica y firma digital, almacenados en la plataforma del proveedor desde septiembre de 2023, carecen de una política de retención de datos.",
             pdi: 50
           }
         }
@@ -242,19 +242,19 @@ export const activities: Activities = {
             name: "Uso de cuentas genéricas por tienda",
             severity: "grave",
             nombre_completo: "Uso de cuentas genéricas por tienda",
-            descripcion: "Uso de cuentas genéricas por tienda, lo que dificulta la trazabilidad y responsabilidad individual en el manejo de datos personales, aumentando el riesgo de acceso no autorizado o uso indebido de la información.",
+            descripcion: "La existencia de usuarios genéricos con permisos de captación limita la trazabilidad, ya que no es posible identificar de manera nominativa quién realiza cada acción. Esto dificulta el control de accesos y la responsabilidad individual.",
             pdi: 50
           }
         }
       },
       cobranzas_terceros: {
-        name: "Cobranzas – terceros",
+        name: "Cobranzas - terceros",
         riesgos: {
           envio_carteras: {
             name: "Envío de carteras vencidas a terceros",
             severity: "grave",
             nombre_completo: "Envío de carteras vencidas a terceros por correo electrónico",
-            descripcion: "Envío de carteras vencidas a terceros por correo electrónico, lo que puede comprometer la seguridad y confidencialidad de los datos personales contenidos en dichas carteras, aumentando el riesgo de acceso no autorizado o uso indebido de la información.",
+            descripcion: "Los archivos Excel con información detallada de cartera vencida son enviados a terceros, como empresas de cobranza (p. ej., SERVIVALOR), a través de correo electrónico. Esta práctica expone datos financieros y de contacto sin mecanismos de cifrado ni garantías contractuales claras.",
             pdi: 50
           }
         }
@@ -266,7 +266,7 @@ export const activities: Activities = {
             name: "Validación de identidad y evaluación crediticia",
             severity: "leve",
             nombre_completo: "Validación de identidad y evaluación crediticia con contratos pendientes de actualización",
-            descripcion: "Validación de identidad y evaluación crediticia con contratos pendientes de actualización, lo que puede generar incertidumbre sobre las responsabilidades y obligaciones de las partes involucradas en el manejo de datos personales.",
+            descripcion: "La identidad de clientes se valida con el Registro Civil vía Jelou y se realiza evaluación crediticia con Equifax bajo un contrato revisado pero aún sin confirmar su adecuación a la normativa vigente.",
             pdi: 50
           }
         }
@@ -283,7 +283,7 @@ export const activities: Activities = {
             name: "Ausencia de procedimiento formal para eliminación",
             severity: "grave",
             nombre_completo: "Ausencia de procedimiento formal para eliminación de datos en listados recibidos por correo",
-            descripcion: "Ausencia de procedimiento formal para eliminación de datos en listados recibidos por correo, lo que puede resultar en la retención innecesaria de datos personales y aumentar el riesgo de incumplimiento de las normativas de protección de datos.",
+            descripcion: "Los listados de colaboradores se reciben por correo electrónico para realizar cargas masivas, actualizaciones y envíos, permitiendo también descargas locales. Sin embargo, no existe un procedimiento formal que establezca plazos y criterios de borrado, lo que provoca almacenamiento indefinido y riesgo de acceso no autorizado o tratamiento excesivo de la información.",
             pdi: 50
           }
         }
@@ -300,7 +300,7 @@ export const activities: Activities = {
             name: "Ausencia de procedimiento formal para borrado",
             severity: "grave",
             nombre_completo: "Ausencia de procedimiento formal para borrado de datos",
-            descripcion: "Ausencia de procedimiento formal para borrado de datos, lo que puede llevar a la retención innecesaria de información personal y aumentar el riesgo de incumplimiento de las leyes de protección de datos.",
+            descripcion: "Se reciben listados por correo, se realizan cargas masivas de colaboradores y descargas locales para actualizaciones, sin un procedimiento formal de eliminación ni plazos definidos. Esto aumenta el riesgo de almacenamiento innecesario y acceso no autorizado.",
             pdi: 50
           }
         }
@@ -317,7 +317,7 @@ export const activities: Activities = {
             name: "Intercambio de datos en casos de urgencia",
             severity: "grave",
             nombre_completo: "Intercambio de datos por correo y WhatsApp en casos de urgencia",
-            descripcion: "Intercambio de datos por correo y WhatsApp en casos de urgencia, lo que puede comprometer la seguridad y confidencialidad de la información personal al utilizar canales no oficiales o no seguros.",
+            descripcion: "Aunque la comunicación formal con empresas se realiza por correo electrónico, en situaciones de urgencia con los locales se comparte la cédula de clientes por WhatsApp para verificación, sin un procedimiento establecido de protección de datos.",
             pdi: 50
           }
         }
@@ -334,7 +334,7 @@ export const activities: Activities = {
             name: "Ausencia de respaldo (backup)",
             severity: "grave",
             nombre_completo: "Ausencia de respaldo (backup) en el sistema core",
-            descripcion: "Ausencia de respaldo (backup) en el sistema core, lo que puede poner en riesgo la disponibilidad y recuperación de datos en caso de fallos o incidentes, afectando la continuidad del negocio y la protección de los datos personales.",
+            descripcion: "El sistema principal no cuenta con copia de seguridad, lo que puede provocar pérdida de información y suspensión de la captación de clientes en caso de fallo o indisponibilidad.",
             pdi: 50
           }
         }
@@ -346,7 +346,7 @@ export const activities: Activities = {
             name: "Falta de captación de consentimientos",
             severity: "grave",
             nombre_completo: "Falta de captación de consentimientos por caída del sistema",
-            descripcion: "Falta de captación de consentimientos por caída del sistema, lo que puede resultar en el tratamiento de datos personales sin el consentimiento adecuado de los titulares, incumpliendo las normativas de protección de datos.",
+            descripcion: "Una falla en el core impide la recolección de consentimientos, afectando la base legal para el tratamiento de datos y generando incumplimiento normativo.",
             pdi: 50
           }
         }
@@ -358,7 +358,7 @@ export const activities: Activities = {
             name: "Ausencia de acuerdo de nivel de servicio (SLA)",
             severity: "grave",
             nombre_completo: "Ausencia de acuerdo de nivel de servicio (SLA) en soporte internacional",
-            descripcion: "Ausencia de acuerdo de nivel de servicio (SLA) en soporte internacional, lo que puede generar incertidumbre sobre los tiempos y calidad del servicio proporcionado, afectando la gestión adecuada de los datos personales.",
+            descripcion: "No existe un SLA con el equipo de soporte técnico en Uruguay, lo que afecta la continuidad operativa en Ecuador ante incidentes críticos.",
             pdi: 50
           }
         }
@@ -375,7 +375,7 @@ export const activities: Activities = {
             name: "Uso de bases externas para campañas",
             severity: "grave",
             nombre_completo: "Uso de bases externas para campañas",
-            descripcion: "Uso de bases externas para campañas, lo que puede comprometer la calidad y seguridad de los datos personales al depender de fuentes externas que pueden no cumplir con las normativas de protección de datos.",
+            descripcion: "Servicio al cliente SMS Informativos y Publicitarios, base propia de TIA y base de compartida por CLARO.",
             pdi: 50
           }
         }

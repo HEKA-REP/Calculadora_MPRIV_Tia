@@ -506,6 +506,26 @@ const MPRIVCalculator: React.FC = () => {
     setFormData(prev => ({ ...prev, naturalezaVulneracion }));
   };
 
+  const handleLimpiar = () => {
+    setFormData({
+      area: '',
+      proceso: '',
+      riesgo: '',
+      titulares: {},
+      titularesSeleccionados: [],
+      tieneVulnerables: false,
+      gruposVulnerables: [],
+      tiposDatosSeleccionados: [],
+      naturalezaVulneracion: '',
+      intencionalidad: '',
+    });
+    setResults(null);
+    setSimStats(null);
+    setHistSeries(null);
+    setCustomTitularCategories([]);
+    setNewTitularName('');
+  };
+
   return (
     <div className="container-fluid py-3">
       {/* Sección superior: Configuración del Cálculo */}
@@ -826,9 +846,17 @@ const MPRIVCalculator: React.FC = () => {
 
               {/* Acción */}
               <div className="section">
-                <button type="submit" className="btn btn-primary btn-lg w-100">
+                <button type="submit" className="btn btn-primary btn-lg w-100 mb-3">
                   <i className="bi bi-calculator me-2"></i>
                   Calcular Multa MPRIV
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-light btn-lg w-100 border-secondary text-secondary"
+                  onClick={handleLimpiar}
+                >
+                  <i className="bi bi-arrow-clockwise me-2"></i>
+                  Limpiar
                 </button>
               </div>
             </form>
